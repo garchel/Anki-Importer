@@ -1,6 +1,6 @@
 // main.js
 
-const { app, BrowserWindow, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, clipboard } = require('electron');
 const path = require('path');
 
 // Variáveis para armazenar a janela principal e a bandeja (tray)
@@ -93,12 +93,45 @@ function createTray() {
   });
 }
 
+/**
+ * Registra o atalho global e define a ação.
+ */
+function registerGlobalShortcut() {
+  const shortcut = 'Alt+G'; // Usa Command para macOS e Control para Windows/Linux
+  
+  const success = globalShortcut.register(shortcut, () => {
+    // 1. Pega o texto da área de transferência
+    const selectedText = clipboard.readText().trim();
+    
+    if (mainWindow) {
+      // 2. Garante que a janela está visível
+      if (!mainWindow.isVisible()) {
+        mainWindow.show();
+      }
+      
+      // 3. Envia o texto para o processo de renderização (React)
+      // Usaremos o IPC (Inter-Process Communication) para enviar a informação.
+      if (selectedText) {
+        mainWindow.webContents.send('global-shortcut-text', selectedText);
+      } else {
+        // Opcional: Avisar o usuário se nada foi copiado
+        mainWindow.webContents.send('global-shortcut-text', 'Nenhum texto encontrado na área de transferência.');
+      }
+    }
+  });
+
+  if (!success) {
+    console.error(`Falha ao registrar o atalho global: ${shortcut}`);
+  }
+}
+
 // --- Ciclo de vida do aplicativo ---
 
 // Quando o Electron estiver pronto para criar janelas e bandejas
 app.whenReady().then(() => {
   createWindow();
   createTray();
+	registerGlobalShortcut();
 
   app.on('activate', () => {
     // Reabre a janela se o ícone do dock for clicado (principalmente macOS)
@@ -119,4 +152,8 @@ app.on('window-all-closed', () => {
     // No macOS, é comum que o app permaneça rodando até o usuário sair do Dock.
     // Não fazemos nada aqui para manter a lógica do Tray.
   }
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });

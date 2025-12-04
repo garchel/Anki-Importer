@@ -1,12 +1,10 @@
 import './App.css'
-import { ImporterForm } from './components/ImporterForm';
+import { AppLayout } from './components/AppLayout';
 
 function App() {
-  return (
-    <div className="min-h-screen bg-gray-100 py-10">
-      <ImporterForm />
-    </div>
-  );
+    return (
+        <AppLayout /> 
+    );
 }
 
 export default App

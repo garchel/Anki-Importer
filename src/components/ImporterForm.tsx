@@ -1,5 +1,3 @@
-// src/components/ImporterForm.tsx
-
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   getDeckNames,
@@ -9,231 +7,333 @@ import {
   getVersion,
 } from '../api/AnkiService';
 import { parseNotesFromCSVText } from '../lib/parser';
+import type { PreviewCard, Note } from '../api/types';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { PreviewTable } from '@/components/PreviewTable';
+import { CardModal } from '@/components/CardModal';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
-// Simulação de componentes do shadcn/ui (você deve substituir pela importação real)
-const Button = ({ children, onClick, disabled, variant = 'default', className = '' }: any) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    className={`px-4 py-2 rounded font-semibold transition-colors ${
-      disabled ? 'bg-gray-300 cursor-not-allowed' : variant === 'destructive' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-blue-600 text-white hover:bg-blue-700'
-    } ${className}`}
-  >
-    {children}
-  </button>
-);
-const Textarea = (props: any) => (
-  <textarea
-    {...props}
-    className="w-full p-3 border border-gray-300 rounded resize-none focus:ring-blue-500 focus:border-blue-500"
-  />
-);
-const Select = ({ value, onValueChange, options, placeholder }: any) => (
-  <select
-    value={value}
-    onChange={(e) => onValueChange(e.target.value)}
-    className="w-full p-2 border border-gray-300 rounded bg-white appearance-none focus:ring-blue-500 focus:border-blue-500"
-  >
-    <option value="" disabled>{placeholder}</option>
-    {options.map((option: string) => (
-      <option key={option} value={option}>{option}</option>
-    ))}
-  </select>
-);
-const Label = ({ htmlFor, children }: any) => (
-  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">
-    {children}
-  </label>
-);
+// --- Interface para a API do Electron ---
+declare global {
+  interface Window {
+    electronAPI?: {
+      onReceiveText: (callback: (text: string) => void) => void;
+    };
+  }
+}
 
-// --- Componente Principal ---
+// -----------------------------------------------------------
+// Componente CustomSelect Reimplementado usando shadcn/ui Select
+// -----------------------------------------------------------
+interface CustomSelectProps {
+    value: string;
+    onValueChange: (value: string) => void;
+    options: string[];
+    placeholder: string;
+    disabled: boolean;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({ value, onValueChange, options, placeholder, disabled }) => (
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+        <SelectTrigger className="w-full bg-input border-border text-foreground focus:ring-ring disabled:opacity-50">
+            <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent className="bg-popover text-popover-foreground border-border">
+            {options.map((option) => (
+                <SelectItem key={option} value={option} className="hover:bg-accent hover:text-accent-foreground">
+                    {option}
+                </SelectItem>
+            ))}
+        </SelectContent>
+    </Select>
+);
+// -----------------------------------------------------------
 
 export const ImporterForm: React.FC = () => {
-  // Estado para armazenar os dados do Anki
-  const [deckNames, setDeckNames] = useState<string[]>([]);
-  const [modelNames, setModelNames] = useState<string[]>([]);
-  const [fieldNames, setFieldNames] = useState<string[]>([]);
-  
-  // Estado para a seleção do usuário
-  const [selectedDeck, setSelectedDeck] = useState('');
-  const [selectedModel, setSelectedModel] = useState('');
-  const [csvText, setCsvText] = useState('');
+    // Estado para armazenar os dados do Anki
+    const [deckNames, setDeckNames] = useState<string[]>([]);
+    const [modelNames, setModelNames] = useState<string[]>([]);
+    const [fieldNames, setFieldNames] = useState<string[]>([]);
+    
+    // Estado para a seleção do usuário
+    const [selectedDeck, setSelectedDeck] = useState('');
+    const [selectedModel, setSelectedModel] = useState('');
+    const [csvText, setCsvText] = useState('');
 
-  // Estado da UI
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    // --- NOVOS ESTADOS PARA PRÉVIA ---
+    const [previewCards, setPreviewCards] = useState<PreviewCard[] | null>(null);
+    const [currentView, setCurrentView] = useState<'form' | 'preview'>('form');
+    const [selectedCard, setSelectedCard] = useState<PreviewCard | null>(null); // Para o modal de visualização
 
-  // 1. Carregar Decks e Models ao montar o componente
-  useEffect(() => {
-    const loadAnkiData = async () => {
-      setError(null);
-      setSuccessMessage(null);
-      try {
-        await getVersion(); // Testa a conexão primeiro
-        const decks = await getDeckNames();
-        const models = await getModelNames();
-        setDeckNames(decks);
-        setModelNames(models);
-      } catch (err: any) {
-        setError(err.message || 'Erro desconhecido ao conectar ao Anki.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadAnkiData();
-  }, []);
+    // Estado da UI
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [capturedText, setCapturedText] = useState('');
+    
+    // 1. Carregar Decks e Models ao montar o componente
+    useEffect(() => {
+        const loadAnkiData = async () => {
+          setError(null);
+          setSuccessMessage(null);
+          try {
+            await getVersion(); // Testa a conexão primeiro
+            const decks = await getDeckNames();
+            const models = await getModelNames();
+            setDeckNames(decks);
+            setModelNames(models);
+          } catch (err: any) {
+            setError(err.message || 'Erro desconhecido ao conectar ao Anki.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        loadAnkiData();
+    }, []);
 
-  // 2. Carregar FieldNames sempre que um Model for selecionado
-  useEffect(() => {
-    if (selectedModel) {
-      const loadFields = async () => {
-        try {
-          const fields = await getModelFieldNames(selectedModel);
-          setFieldNames(fields);
-        } catch (err: any) {
-          setError(err.message || 'Erro ao carregar campos do modelo.');
+    // 2. Carregar FieldNames sempre que um Model for selecionado
+    useEffect(() => {
+        if (selectedModel) {
+          const loadFields = async () => {
+            try {
+              const fields = await getModelFieldNames(selectedModel);
+              setFieldNames(fields);
+            } catch (err: any) {
+              setError(err.message || 'Erro ao carregar campos do modelo.');
+            }
+          };
+          loadFields();
+        } else {
+          setFieldNames([]);
         }
-      };
-      loadFields();
-    } else {
-      setFieldNames([]);
-    }
-  }, [selectedModel]);
-  
-  // 3. Função de Submissão
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccessMessage(null);
-
-    if (!selectedDeck || !selectedModel || !csvText.trim()) {
-      setError('Por favor, preencha todos os campos e cole o texto CSV.');
-      return;
-    }
-
-    // 3a. Parsing do Texto
-    let notesToImport;
-    try {
-      notesToImport = parseNotesFromCSVText(csvText, selectedDeck, selectedModel);
-      if (notesToImport.length === 0) {
-        setError('Nenhuma linha de flashcard válida foi encontrada no texto colado.');
-        return;
-      }
-    } catch (parseError: any) {
-      setError(`Erro de Parsing: ${parseError.message}`);
-      return;
-    }
-
-    // 3b. Envio para o AnkiConnect
-    setIsSubmitting(true);
-    try {
-      const results = await addNotes(notesToImport);
-      const successfulCount = results.filter(id => id !== null).length;
+    }, [selectedModel]);
       
-      setSuccessMessage(
-        `✅ Sucesso! ${successfulCount} de ${notesToImport.length} flashcards importados para o deck "${selectedDeck}".`
-      );
-      setCsvText(''); // Limpa o texto após o sucesso
+    // 3. Efeito para ouvir o atalho global (captura de texto)
+    useEffect(() => {
+        if (window.electronAPI) {
+          console.log("Ouvindo o atalho global...");
+          
+          const listener = (text: string) => {
+            setCapturedText(text);
+            setCsvText(text); 
+            setError(null);
+            setSuccessMessage(null);
+            setCurrentView('form'); 
+          };
+          
+          window.electronAPI.onReceiveText(listener);
+        }
+    }, []);
 
-    } catch (ankiError: any) {
-      setError(`Erro de Importação para o Anki: ${ankiError.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [csvText, selectedDeck, selectedModel]);
+    // 4. Lógica de Parsing
+    const handleParse = useCallback((e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        setSuccessMessage(null);
 
-  // Checagens de validação
-  const isFormValid = selectedDeck && selectedModel && csvText.trim() && !isSubmitting;
-  const isAnkiConnected = !isLoading && !error;
+        if (!selectedDeck || !selectedModel || !csvText.trim()) {
+            setError('Por favor, preencha todos os campos e cole o texto CSV.');
+            return;
+        }
 
-  return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">🗂️ Importador de Flashcards AnkiConnect</h2>
-      
-      {/* Mensagens de Status */}
-      {isLoading && (
-        <div className="p-4 mb-4 bg-yellow-100 text-yellow-800 rounded-md">
-          Conectando ao Anki... Certifique-se de que o Anki e o AnkiConnect estão abertos.
-        </div>
-      )}
-      {error && (
-        <div className="p-4 mb-4 bg-red-100 text-red-800 rounded-md font-medium">
-          ❌ Erro: {error}
-        </div>
-      )}
-      {successMessage && (
-        <div className="p-4 mb-4 bg-green-100 text-green-800 rounded-md font-medium">
-          {successMessage}
-        </div>
-      )}
+        try {
+            const parsed = parseNotesFromCSVText(csvText, selectedDeck, selectedModel);
+            
+            if (parsed.length === 0) {
+                setError('Nenhuma linha de flashcard válida foi encontrada.');
+                return;
+            }
+            
+            setPreviewCards(parsed);
+            setCurrentView('preview');
+        } catch (parseError: any) {
+            setError(`Erro de Parsing: ${parseError.message}`);
+        }
+    }, [csvText, selectedDeck, selectedModel]);
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+    // 5. Lógica de Importação
+    const handleImport = useCallback(async () => {
+        if (!previewCards || previewCards.length === 0) return;
         
-        {/* Seleção de Baralho (Deck) */}
-        <div>
-          <Label htmlFor="deck">1. Selecione o Baralho de Destino</Label>
-          <Select
-            value={selectedDeck}
-            onValueChange={setSelectedDeck}
-            options={deckNames}
-            placeholder="Escolha um Baralho"
-            disabled={!isAnkiConnected}
-          />
+        const notesToImport: Note[] = previewCards
+            .filter(card => card.willImport)
+            .map(card => card.note);
+
+        if (notesToImport.length === 0) {
+            setError('Nenhum flashcard selecionado para importação.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const results = await addNotes(notesToImport);
+            const successfulCount = results.filter(id => id !== null).length;
+            
+            setSuccessMessage(
+                `✅ Sucesso! ${successfulCount} de ${notesToImport.length} flashcards importados para o deck "${selectedDeck}".`
+            );
+            setCsvText('');
+            setPreviewCards(null);
+            setCurrentView('form');
+        } catch (ankiError: any) {
+            setError(`Erro de Importação para o Anki: ${ankiError.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [previewCards, selectedDeck]);
+    
+    // 6. Lógica de Checkbox (Toggle de importação na tabela)
+    const handleToggleImport = useCallback((id: number) => {
+        if (!previewCards) return;
+        setPreviewCards(
+          previewCards.map(card =>
+            card.id === id ? { ...card, willImport: !card.willImport } : card
+          )
+        );
+    }, [previewCards]);
+    
+    // 7. Lógica de Modal
+    const handleOpenModal = useCallback((card: PreviewCard) => {
+        setSelectedCard(card);
+    }, []);
+    
+    const handleCloseModal = useCallback(() => {
+        setSelectedCard(null);
+    }, []);
+
+
+    // Checagens de validação
+    const isFormValid = selectedDeck && selectedModel && csvText.trim();
+    const isAnkiConnected = !isLoading && !error;
+
+
+    // --- Renderização ---
+    return (
+        <div className="max-w-6xl mx-auto p-6 bg-card text-card-foreground shadow-xl rounded-lg border border-border">
+            <h2 className="text-3xl font-extrabold mb-6 border-b border-border pb-2">
+                {currentView === 'form' ? '🗂️ Importador de Flashcards' : '👀 Prévia e Confirmação'}
+            </h2>
+            
+            {/* Mensagens de Status: Usando cores temáticas de Alerta/Destrutivo */}
+            {isLoading && (
+                <div className="p-4 mb-4 bg-muted text-muted-foreground rounded-md border border-border">
+                    Conectando ao Anki... Verifique se o Anki está aberto.
+                </div>
+            )}
+            {error && (
+                <div className="p-4 mb-4 bg-destructive/20 text-destructive rounded-md font-medium border border-destructive/50">
+                    ❌ Erro: {error}
+                </div>
+            )}
+            {successMessage && (
+                <div className="p-4 mb-4 bg-secondary text-secondary-foreground rounded-md font-medium border border-border">
+                    {successMessage}
+                </div>
+            )}
+            {capturedText && currentView === 'form' && (
+                <div className="p-3 mb-4 bg-primary/20 text-secondary-foreground rounded-md font-medium text-sm border border-primary/50">
+                    ✨ Texto capturado via atalho global: **{capturedText.substring(0, 100)}...**
+                </div>
+            )}
+
+            
+            {/* --- Renderização Condicional --- */}
+            {currentView === 'form' && (
+                <form onSubmit={handleParse} className="space-y-6">
+                    
+                    {/* Seleção de Baralho (Deck) */}
+                    <div>
+                        <Label htmlFor="deck" className='mb-2'>1. Selecione o Baralho de Destino</Label>
+                        <CustomSelect
+                            value={selectedDeck}
+                            onValueChange={setSelectedDeck}
+                            options={deckNames}
+                            placeholder="Escolha um Baralho"
+                            disabled={!isAnkiConnected}
+                        />
+                    </div>
+
+                    {/* Seleção de Tipo de Nota (Model) */}
+                    <div>
+                        <Label htmlFor="model" className='mb-2'>2. Selecione o Tipo de Nota</Label>
+                        <CustomSelect
+                            value={selectedModel}
+                            onValueChange={setSelectedModel}
+                            options={modelNames}
+                            placeholder="Escolha um Tipo de Nota (Ex: Basic)"
+                            disabled={!isAnkiConnected}
+                        />
+                    </div>
+
+                    {/* Visualização de Campos */}
+                    {selectedModel && (
+                        <div className="p-3 bg-secondary border border-border rounded-md text-sm text-secondary-foreground">
+                            <p className="font-medium mb-1">Campos do Modelo Selecionado:</p>
+                            <p className="text-muted-foreground">
+                                {fieldNames.length > 0 ? fieldNames.join(', ') : 'Carregando campos...'}
+                            </p>
+                            <p className="mt-2 text-primary text-xs">
+                                Lembrete: Seu texto deve mapear para os campos, seguido pelas Tags.
+                                <br/>**Formato Esperado:** Frente;Verso;Tag1,Tag2
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Área de Colagem do Texto */}
+                    <div>
+                        <Label htmlFor="csvText" className='mb-2'>
+                            3. Cole o Conteúdo
+                        </Label>
+                        {/* Textarea usa bg-input e border-input */}
+                        <Textarea
+                            id="csvText"
+                            rows={10}
+                            value={csvText}
+                            onChange={(e: any) => setCsvText(e.target.value)}
+                            placeholder="Cole seu texto aqui, uma linha por flashcard. Ex: Qual a principal característica?;Única;Set,Java"
+                            disabled={!isAnkiConnected || isSubmitting}
+                            className="bg-input border-border text-foreground focus:ring-ring"
+                        />
+                    </div>
+
+                    {/* Botão de Análise: Usa o Primary para ação principal */}
+                    <Button
+                        type="submit"
+                        disabled={!isFormValid || isSubmitting}
+                        className="w-full h-12 text-lg bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                        {isSubmitting ? 'Analisando...' : `Analisar e Pré-visualizar ${csvText.trim() ? csvText.trim().split('\n').length : 0} Cards`}
+                    </Button>
+
+                </form>
+            )}
+
+            {currentView === 'preview' && previewCards && (
+                <PreviewTable
+                    previewCards={previewCards}
+                    onToggleImport={handleToggleImport}
+                    onImport={handleImport}
+                    onBack={() => setCurrentView('form')}
+                    onOpenModal={handleOpenModal}
+                    isSubmitting={isSubmitting}
+                />
+            )}
+            
+            {/* Modal de Visualização em Tela Cheia */}
+            {selectedCard && (
+                <CardModal card={selectedCard} onClose={handleCloseModal} />
+            )}
         </div>
-
-        {/* Seleção de Tipo de Nota (Model) */}
-        <div>
-          <Label htmlFor="model">2. Selecione o Tipo de Nota</Label>
-          <Select
-            value={selectedModel}
-            onValueChange={setSelectedModel}
-            options={modelNames}
-            placeholder="Escolha um Tipo de Nota (Ex: Basic)"
-            disabled={!isAnkiConnected}
-          />
-        </div>
-
-        {/* Visualização de Campos */}
-        {selectedModel && (
-          <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-sm">
-            <p className="font-medium mb-1">Campos do Modelo Selecionado:</p>
-            <p className="text-gray-600">
-              {fieldNames.length > 0 ? fieldNames.join(', ') : 'Carregando campos...'}
-            </p>
-            <p className="mt-2 text-xs text-blue-600">
-                Lembrete: Seu texto deve mapear para os campos, seguido pelas Tags.
-                <br/>**Formato Esperado:** Frente;Verso;Tag1,Tag2
-            </p>
-          </div>
-        )}
-
-        {/* Área de Colagem do Texto */}
-        <div>
-          <Label htmlFor="csvText">
-            3. Cole o Conteúdo (Formato: Frente;Verso;Tag1,Tag2)
-          </Label>
-          <Textarea
-            id="csvText"
-            rows={10}
-            value={csvText}
-            onChange={(e: any) => setCsvText(e.target.value)}
-            placeholder="Cole seu texto aqui, uma linha por flashcard. Ex: Qual a principal característica?;Única;Set,Java"
-            disabled={!isAnkiConnected || isSubmitting}
-          />
-        </div>
-
-        {/* Botão de Submissão */}
-        <Button
-          type="submit"
-          disabled={!isFormValid || isSubmitting}
-          className="w-full"
-        >
-          {isSubmitting ? 'Importando...' : `Importar ${csvText.trim() ? csvText.trim().split('\n').length : 0} Flashcards`}
-        </Button>
-
-      </form>
-    </div>
-  );
+    );
 };

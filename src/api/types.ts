@@ -39,6 +39,15 @@ export interface Note {
   // Opcional: para arquivos de mídia, ignoraremos por enquanto para simplificar
 }
 
+export interface PreviewCard {
+  id: number; // Índice/Número do Card
+  front: string;
+  back: string;
+  tags: string[];
+  willImport: boolean; // Controla o Checkbox
+  note: Note; // A estrutura completa que será enviada ao AnkiConnect
+}
+
 // Estrutura para o parâmetro 'notes' na ação 'addNotes'
 export interface AddNotesParams {
   notes: Note[];
