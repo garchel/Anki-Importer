@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Settings, BookOpen, User, Menu, FileText } from "lucide-react";
+import { Settings, BookOpen, User, Menu, FileText, Bot } from "lucide-react";
 import type { AppScreen } from "@/hooks/useNavigation";
 
 import {
@@ -21,6 +21,7 @@ const navItems = [
 	{ name: "Importar", screen: "importer" as AppScreen, icon: FileText },
 	{ name: "Configurações", screen: "settings" as AppScreen, icon: Settings },
 	{ name: "Como usar", screen: "how-to" as AppScreen, icon: BookOpen },
+	{ name: "Prompts", screen: "prompts" as AppScreen, icon: Bot },
 	{ name: "Conheça o Dev", screen: "about" as AppScreen, icon: User },
 ];
 
@@ -90,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 									<Button
 										onClick={() => navigateTo(item.screen)}
 										className={`
-											flex items-center h-10 rounded-lg transition-colors duration-200
+											flex items-center h-10 rounded-lg transition-colors duration-300
 											${isActive
 												? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 shadow-md"
 												: "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -102,11 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 											<Icon className="h-5 w-5" />
 										</div>
 
-										{/* Texto com fade suave */}
 										<span
 											className={`
 												ml-3 whitespace-nowrap overflow-hidden transition-all duration-400
-												${isSidebarOpen ? "opacity-100" : "opacity-0 w-0"}
+												${isSidebarOpen ? "opacity-100" : "opacity-0"}
 											`}
 										>
 											{item.name}

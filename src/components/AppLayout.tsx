@@ -1,16 +1,12 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { ImporterForm } from './ImporterForm';
+import SettingsScreen  from './SettingsScreen'
 import { useNavigation } from '@/hooks/useNavigation';
+import { SuggestedPrompts } from './SuggestedPrompts';
 import type { AppScreen } from '@/hooks/useNavigation'
 
 // Componentes de Conteúdo (Simulações de Telas Futuras)
-const SettingsScreen: React.FC = () => (
-    <div className="p-6">
-        <h1 className="text-3xl font-bold text-foreground">⚙️ Configurações</h1>
-        <p className="mt-4 text-muted-foreground">Aqui você ajustará as preferências do aplicativo.</p>
-    </div>
-);
 
 const HowToScreen: React.FC = () => (
     <div className="p-6">
@@ -28,16 +24,15 @@ const AboutScreen: React.FC = () => (
 
 
 const renderScreen = (screen: AppScreen) => {
-    // Renderização Otimizada: Apenas a tela ativa é renderizada
     switch (screen) {
         case 'importer':
-            // Passamos o layoutClasses (max-w-7xl, mx-auto) para o ImporterForm 
-            // para manter o seu responsivo interno.
             return <ImporterForm />;
         case 'settings':
             return <SettingsScreen />;
         case 'how-to':
             return <HowToScreen />;
+				case 'prompts':
+						return <SuggestedPrompts />
         case 'about':
             return <AboutScreen />;
         default:

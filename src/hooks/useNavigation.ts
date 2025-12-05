@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export type AppScreen = 'importer' | 'settings' | 'how-to' | 'about';
+export type AppScreen = 'importer' | 'settings' | 'how-to' | 'prompts' | 'about';
 
 export const useNavigation = () => {
     // 1. Estado da tela atual
