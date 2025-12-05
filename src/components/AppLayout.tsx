@@ -45,28 +45,22 @@ export const AppLayout: React.FC = () => {
 	const { currentScreen, navigateTo, isSidebarOpen, toggleSidebar } = useNavigation();
 
 	return (
-		<div className="flex h-screen overflow-hidden relative"> {/* Use 'relative' no contêiner raiz */}
+		<div className="flex h-screen overflow-hidden relative">
 
-			{/* 1. BARRA DE DRAG CUSTOMIZADA */}
-			{/* Posição Fixa no topo. Z-Index baixo para ficar ABAIXO da sidebar. */}
+
 			<div
-				className="fixed top-0 left-0 right-0 h-8 bg-background z-10" // <-- FIXED, LEFT/RIGHT 0, Z-INDEX 10
-				style={{ WebkitAppRegion: 'drag' }} // Torna a barra arrastável
+				className="fixed top-0 left-0 right-0 h-8 bg-background z-10"
+				style={{ WebkitAppRegion: 'drag' }}
 			>
-				{/* Insere os controles no canto direito e os torna NÃO-arrastáveis */}
 				<div className="absolute top-0 right-0 h-8" style={{ WebkitAppRegion: 'no-drag' }}>
 					<WindowControls />
 				</div>
-				{/* Opcional: Título/Marca no centro da barra de drag */}
 				<div className='absolute left-1/2 transform -translate-x-1/2 text-sm text-muted-foreground pt-1' style={{ WebkitAppRegion: 'no-drag' }}>
 					Anki Importer
 				</div>
 			</div>
 
-			{/* 2. Sidebar (Deve ter Z-INDEX maior para sobrepor a barra de drag) */}
-			{/* Assumindo que a Sidebar já tem "absolute" ou "fixed" internamente.
-         Se não tiver, precisa adicionar 'z-20' ou algo similar no componente Sidebar internamente,
-         ou torná-lo 'fixed'/'absolute' aqui. */}
+
 			<Sidebar
 				currentScreen={currentScreen}
 				navigateTo={navigateTo}
@@ -74,11 +68,9 @@ export const AppLayout: React.FC = () => {
 				toggleSidebar={toggleSidebar}
 			/>
 
-			{/* 3. Área Principal de Conteúdo */}
-			{/* Adiciona padding no topo para o conteúdo não ser coberto pela barra de drag (h-8) */}
-			<main className={`flex-1 overflow-y-auto pt-12 p-4 transition-all duration-300 ease-in-out`}> {/* <-- Mude p-4 para pt-12 p-4 */}
+
+			<main className={`flex-1 overflow-y-auto pt-12 p-4 transition-all duration-300 ease-in-out hide-scrollbar`}>
 				<div className="max-w-7xl mx-auto">
-					{/* Renderiza o conteúdo da tela ativa */}
 					{renderScreen(currentScreen)}
 				</div>
 			</main>

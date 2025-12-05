@@ -116,6 +116,16 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Classe para navegadores WebKit (Chrome, Safari, Edge) */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Esconde a barra */
+}
+
+/* Classe para Firefox */
+.hide-scrollbar {
+    scrollbar-width: none; /* Esconde a barra */
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
