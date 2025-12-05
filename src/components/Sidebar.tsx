@@ -35,7 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 	return (
 		<aside
-			className={`flex flex-col h-screen ${sidebarWidthClass} bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out flex-shrink-0`}
+			className={`flex flex-col h-screen ${sidebarWidthClass} bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out flex-shrink-0 z-20`}
 		>
 			{/* Header */}
 			<div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">

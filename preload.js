@@ -15,4 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
 	// Método redundante mantido para compatibilidade
 	onReceiveText: (callback) => ipcRenderer.on('global-shortcut-text', (event, text) => callback(text)),
+
+	minimizeWindow: () => ipcRenderer.send('minimize-window'),
+	maximizeWindow: () => ipcRenderer.send('maximize-window'),
+	// Usamos 'quit-app' no main.js para garantir o fechamento total, conforme solicitado.
+	closeWindow: () => ipcRenderer.send('quit-app'),
 });

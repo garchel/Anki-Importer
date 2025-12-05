@@ -36,7 +36,11 @@ function createWindow() {
 		height: windowHeight,
 		minWidth: 600,
 		minHeight: 400,
-		title: "AnkiConnect Importer",
+		title: "Anki Importer",
+
+		frame:false,
+		autoHideMenuBar:true,
+
 		webPreferences: {
 			// Garantir que a comunicação do Front-end seja segura
 			preload: path.join(__dirname, 'preload.js'),
@@ -177,6 +181,31 @@ function registerIpcHandlers() {
 			}
 		}
 	});
+
+	// Handle para minimizar a janela
+	ipcMain.on('minimize-window', () => {
+		if (mainWindow) {
+			mainWindow.minimize();
+		}
+	});
+
+	// Handle para maximizar/restaurar a janela
+	ipcMain.on('maximize-window', () => {
+		if (mainWindow) {
+			if (mainWindow.isMaximized()) {
+				mainWindow.unmaximize();
+			} else {
+				mainWindow.maximize();
+			}
+		}
+	});
+
+	// Handle para fechar/sair completamente do aplicativo (Fecha mesmo)
+	ipcMain.on('quit-app', () => {
+		// Define a flag e encerra o aplicativo, ignorando a lógica do 'close' (hide)
+		appQuitting = true;
+		app.quit();
+	});
 }
 
 // --- Ciclo de vida do aplicativo ---
@@ -187,6 +216,8 @@ app.whenReady().then(() => {
 	createTray();
 	registerGlobalShortcut();
 	registerIpcHandlers();
+
+	Menu.setApplicationMenu(null);
 
 	app.on('activate', () => {
 		// Reabre a janela se o ícone do dock for clicado (principalmente macOS)

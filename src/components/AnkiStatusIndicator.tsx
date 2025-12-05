@@ -26,17 +26,12 @@ export const AnkiStatusIndicator: React.FC<AnkiStatusIndicatorProps> = ({ isLoad
 		statusIcon = '🟢';
 		statusText = 'Conexão com o Anki: Conectado.';
 	} else {
-		// Fallback: Conexão não confirmada, mas sem erro.
 		statusIcon = '🟡';
 		statusText = 'Verificando status do Anki...';
 	}
 
-	// Visual Minimalista: (Status: 🟢)
 	const display = `Status: ${statusIcon}`;
 
-	// A TooltipProvider é necessária para usar a Tooltip. Assumimos que o ImporterForm 
-	// já a fornece, mas para segurança, vou adicioná-la aqui.
-	// Recomenda-se mover a TooltipProvider para um nível superior, se possível.
 	return (
 		<TooltipProvider>
 			<Tooltip>
@@ -45,7 +40,7 @@ export const AnkiStatusIndicator: React.FC<AnkiStatusIndicatorProps> = ({ isLoad
 						{display}
 					</span>
 				</TooltipTrigger>
-				<TooltipContent className="bg-popover text-popover-foreground border-border max-w-sm">
+				<TooltipContent side="bottom" className="bg-popover text-popover-foreground border-border max-w-sm">
 					<p>{statusText}</p>
 				</TooltipContent>
 			</Tooltip>
