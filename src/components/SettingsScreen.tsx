@@ -1,20 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
-
-// Importa o useSettings e tipos do arquivo de contexto real
-import {
-	useSettings,
-	AVAILABLE_MODELS, // Usar o array exportado do contexto/tipos para consistência
-} from './context/SettingsContext';
-
-
+import React from 'react';
+import { useSettings} from './context/SettingsContext';
 import type {
 	FieldDelimiter,
 	AllowedModel,
 } from './context/SettingsContext';
-
-// Importa componentes UI
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import type { CheckedState } from '@radix-ui/react-checkbox';
 import {
@@ -24,16 +14,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-
-// --- TIPAGEM GLOBAL PARA O ELECTRON (mantido para executabilidade) ---
-declare global {
-	interface Window {
-		electronAPI?: {
-			updateWindowSize: (size: { width: number; height: number }) => void;
-		};
-	}
-}
-// --------------------------------------------------------------------
 
 const WINDOW_RESOLUTIONS = [
 	{ width: 800, height: 600, label: 'Pequena' },

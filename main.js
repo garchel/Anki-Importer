@@ -1,27 +1,39 @@
 const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, clipboard, ipcMain } = require('electron');
 const path = require('path');
+const Store = require('electron-store').default;
+
+// Define o esquema de persistência, incluindo todas as settings do frontend
+const store = new Store({
+	name: 'user-settings', // Nome do arquivo JSON
+	defaults: {
+		windowWidth: 1024,
+		windowHeight: 768,
+		defaultDeck: 'Default',
+		defaultModel: 'Básico',
+		allowedModels: ['Básico', 'Básico (e cartão invertido)', 'Omissão de Palavras'],
+		fieldDelimiter: ';',
+		ankiDelimiter: ';',
+	}
+});
 
 // Variáveis para armazenar a janela principal e a bandeja (tray)
 let mainWindow = null;
 let tray = null;
-
-// Flag para controlar se o usuário realmente quer sair do app (necessário para "run in background")
 let appQuitting = false;
 
-// Configurações Atuais da Janela (Simulando leitura de configuração persistente)
-let currentWindowSettings = {
-	width: 1024,
-	height: 768,
-};
 
 /**
  * Cria a janela principal do aplicativo.
  */
 function createWindow() {
+	const windowWidth = store.get('windowWidth');
+	const windowHeight = store.get('windowHeight');
+
+
 	mainWindow = new BrowserWindow({
 		// Usa as dimensões padrão ou salvas
-		width: currentWindowSettings.width,
-		height: currentWindowSettings.height,
+		width: windowWidth,
+		height: windowHeight,
 		minWidth: 600,
 		minHeight: 400,
 		title: "AnkiConnect Importer",
@@ -132,10 +144,16 @@ function registerGlobalShortcut() {
 }
 
 /**
- * Registra o handler IPC para redimensionar a janela
+ * Registra o handler IPC para redimensionar a janela e persistir configurações
  */
 function registerIpcHandlers() {
-	// Handle para comando de redimensionamento vindo do frontend (Select na SettingsScreen)
+
+	// Handler para o frontend pedir todas as configurações salvas (get-all-settings)
+	ipcMain.handle('get-all-settings', (event) => {
+		return store.store; // Retorna todo o objeto de configurações
+	});
+
+	// Handle para comando de redimensionamento vindo do frontend (update-window-size)
 	ipcMain.on('update-window-size', (event, size) => {
 		if (mainWindow && size.width && size.height) {
 			// 1. Aplica o redimensionamento na janela principal
@@ -144,9 +162,19 @@ function registerIpcHandlers() {
 			// 2. Centraliza a janela após o redimensionamento (melhora UX)
 			mainWindow.center();
 
-			// 3. Atualiza as configurações salvas (simulando persistência)
-			currentWindowSettings.width = size.width;
-			currentWindowSettings.height = size.height;
+			// 3. Salva as novas dimensões na store permanentemente
+			store.set('windowWidth', size.width);
+			store.set('windowHeight', size.height);
+		}
+	});
+
+	// Handle para salvar configurações parciais do frontend (save-settings)
+	ipcMain.on('save-settings', (event, newSettings) => {
+		if (newSettings && typeof newSettings === 'object') {
+			for (const key in newSettings) {
+				// Salva cada propriedade na store de forma persistente
+				store.set(key, newSettings[key]);
+			}
 		}
 	});
 }

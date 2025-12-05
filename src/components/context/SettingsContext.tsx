@@ -15,6 +15,8 @@ export const AVAILABLE_MODELS = [
 export type FieldDelimiter = ';' | '|' | '//';
 export type AllowedModel = (typeof AVAILABLE_MODELS)[number];
 
+// --- Interfaces de Tipagem Principal ---
+
 interface AppSettings {
 	// Configurações da Janela
 	windowWidth: number;
@@ -45,7 +47,7 @@ interface SettingsContextType {
 	ankiData: AnkiData; // Novo objeto para dados do Anki
 }
 
-// Valores padrão
+// Valores padrão (usados como fallback se o store não tiver valor)
 const defaultSettings: AppSettings = {
 	windowWidth: 1024,
 	windowHeight: 768,
@@ -93,11 +95,42 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
+	// Função para atualizar as configurações e persistir no Electron
 	const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
-		setSettings(prev => ({
-			...prev,
-			...newSettings,
-		}));
+		setSettings(prev => {
+			const updated = {
+				...prev,
+				...newSettings,
+			};
+
+			// 1. Envia a mudança para o Electron para persistência (saveSettings agora existe)
+			if (window.electronAPI && window.electronAPI.saveSettings) {
+				window.electronAPI.saveSettings(newSettings);
+			}
+
+			return updated;
+		});
+	}, []);
+
+	// Efeito para Carregar Configurações Persistidas na Inicialização
+	useEffect(() => {
+		// getAllSettings agora existe e retorna Promise<Partial<AppSettings>>
+		if (window.electronAPI && window.electronAPI.getAllSettings) {
+			window.electronAPI.getAllSettings().then(savedSettings => {
+				// savedSettings é tipado como Partial<AppSettings>, eliminando o erro 'any'
+				setSettings(prev => ({
+					...prev,
+					...savedSettings,
+					// Garante que os modelos e delimitadores sejam tipados corretamente se vierem do store
+					allowedModels: (savedSettings.allowedModels as AllowedModel[] | undefined) || defaultSettings.allowedModels,
+					fieldDelimiter: (savedSettings.fieldDelimiter as FieldDelimiter | undefined) || defaultSettings.fieldDelimiter,
+					ankiDelimiter: (savedSettings.ankiDelimiter as FieldDelimiter | undefined) || defaultSettings.ankiDelimiter,
+				}));
+			}).catch(err => {
+				console.error("Falha ao carregar configurações salvas:", err);
+				// Permite que o app continue com as defaultSettings
+			});
+		}
 	}, []);
 
 
@@ -142,7 +175,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 		loadAnkiData();
 	}, [loadAnkiData]);
 
-	// --- Lógica de Redimensionamento Robustez e Controle ---
+	// Lógica de Redimensionamento
 	useEffect(() => {
 		// Só envia o comando Electron se o ElectronAPI estiver disponível
 		if (!window.electronAPI || !window.electronAPI.updateWindowSize) {
