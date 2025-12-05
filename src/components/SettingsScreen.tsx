@@ -1,64 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
-// --- MOCK E TIPAGEM PARA TORNAR O COMPONENTE EXECUTÁVEL (Self-Contained) ---
-declare global {
-	interface Window {
-		electronAPI?: {
-			updateWindowSize: (size: { width: number; height: number }) => void;
-		};
-	}
-}
+// Importa o useSettings e tipos do arquivo de contexto real
+import {
+	useSettings,
+	AVAILABLE_MODELS, // Usar o array exportado do contexto/tipos para consistência
+} from './context/SettingsContext';
 
-type FieldDelimiter = ';' | '|' | '\t';
-type AllowedModel = 'Basic' | 'Basic (and reversed card)' | 'Cloze' | 'Custom Model';
 
-interface Settings {
-	allowedModels: AllowedModel[];
-	fieldDelimiter: FieldDelimiter;
-	defaultDeck: string;
-	defaultModel: AllowedModel;
-	windowWidth: number;
-	windowHeight: number;
-}
+import type {
+	FieldDelimiter,
+	AllowedModel,
+} from './context/SettingsContext';
 
-interface SettingsContextType {
-	settings: Settings;
-	updateSettings: (newSettings: Partial<Settings>) => void;
-}
-
-const AVAILABLE_MODELS: AllowedModel[] = [
-	'Basic',
-	'Basic (and reversed card)',
-	'Cloze',
-	'Custom Model'
-];
-
-// Hook mockado para simular o contexto
-const useSettings = (): SettingsContextType => {
-	// Inicializa com um tamanho padrão
-	const [settings, setSettings] = React.useState<Settings>({
-		allowedModels: ['Basic', 'Cloze'],
-		fieldDelimiter: '|',
-		defaultDeck: 'Default Deck',
-		defaultModel: 'Basic',
-		windowWidth: 1024,
-		windowHeight: 768,
-	});
-
-	const updateSettings = (newSettings: Partial<Settings>) => {
-		setSettings(prev => ({ ...prev, ...newSettings }));
-	};
-
-	return { settings, updateSettings };
-};
-// ---------------------------------------------------------------------------
-
+// Importa componentes UI
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
 import type { CheckedState } from '@radix-ui/react-checkbox';
-
 import {
 	Select,
 	SelectContent,
@@ -67,6 +25,16 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 
+// --- TIPAGEM GLOBAL PARA O ELECTRON (mantido para executabilidade) ---
+declare global {
+	interface Window {
+		electronAPI?: {
+			updateWindowSize: (size: { width: number; height: number }) => void;
+		};
+	}
+}
+// --------------------------------------------------------------------
+
 const WINDOW_RESOLUTIONS = [
 	{ width: 800, height: 600, label: 'Pequena' },
 	{ width: 1024, height: 768, label: 'Média' },
@@ -74,35 +42,22 @@ const WINDOW_RESOLUTIONS = [
 	{ width: 1440, height: 900, label: 'Extra Grande' },
 ];
 
+const DELIMITER_OPTIONS: { value: FieldDelimiter; label: string }[] = [
+	{ value: ';', label: ';  (Ponto e Vírgula)' },
+	{ value: '|', label: '|  (Pipe)' },
+	{ value: '//', label: '//  (Barras Duplas)' },
+];
+
+
 const SettingsScreen: React.FC = () => {
-	const { settings, updateSettings } = useSettings();
+	// --- HOOK DO CONTEXTO REAL ---
+	const { settings, updateSettings, ankiData } = useSettings();
+	const { deckNames, modelNames, isLoading, error: ankiError, isConnected, loadAnkiData } = ankiData;
+	// -----------------------------
 
-	// --- NOVO: Efeito para detectar redimensionamento manual ---
-	useEffect(() => {
-		const handleResize = () => {
-			// Atualiza as configurações com o tamanho real atual da janela
-			updateSettings({
-				windowWidth: window.innerWidth,
-				windowHeight: window.innerHeight
-			});
-		};
+	// REMOVIDO: O useEffect que escutava o evento 'resize' do DOM. O redimensionamento manual agora é ignorado.
 
-		// Adiciona um debounce simples para não atualizar excessivamente durante o arrasto
-		let timeoutId: NodeJS.Timeout;
-		const debouncedResize = () => {
-			clearTimeout(timeoutId);
-			timeoutId = setTimeout(handleResize, 150); // Aguarda 150ms após o movimento parar
-		};
-
-		window.addEventListener('resize', debouncedResize);
-
-		// Cleanup
-		return () => {
-			window.removeEventListener('resize', debouncedResize);
-			clearTimeout(timeoutId);
-		};
-	}, [updateSettings]); // Dependência do updateSettings
-
+	// Handler para alternar Modelos Permitidos
 	const handleModelToggle = (model: AllowedModel, checked: CheckedState) => {
 		if (checked === 'indeterminate') return;
 
@@ -113,41 +68,45 @@ const SettingsScreen: React.FC = () => {
 		updateSettings({ allowedModels: newAllowedModels });
 	};
 
-	const handleDelimiterChange = (value: string) => {
-		if ([';', '|', '\t'].includes(value)) {
-			updateSettings({ fieldDelimiter: value as FieldDelimiter });
-		}
+	// Handler para mudar Delimitador do Programa (Field Delimiter)
+	const handleProgramDelimiterChange = (value: string) => {
+		updateSettings({ fieldDelimiter: value as FieldDelimiter });
 	};
 
+	// Handler para mudar Delimitador do Anki (Anki Delimiter)
+	const handleAnkiDelimiterChange = (value: string) => {
+		updateSettings({ ankiDelimiter: value as FieldDelimiter });
+	};
+
+
+	// Handler para mudar Resolução da Janela (Preset)
 	const handleResolutionChange = (value: string) => {
-		// Se o usuário selecionar "custom", não fazemos nada (já está no tamanho atual)
+		// O valor "custom" não deve mais ser uma opção válida no Select,
+		// mas mantemos o if para segurança.
 		if (value === 'custom') return;
 
 		const [width, height] = value.split('x').map(Number);
 		if (!isNaN(width) && !isNaN(height)) {
-			if (typeof window.electronAPI !== 'undefined') {
-				window.electronAPI.updateWindowSize({ width, height });
-			}
+			// A atualização do Electron é disparada pelo useEffect no SettingsProvider
 			updateSettings({ windowWidth: width, windowHeight: height });
 		}
 	};
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		updateSettings({ defaultDeck: e.target.value });
+	// Handler para mudar o Deck Padrão via Select
+	const handleDefaultDeckChange = (value: string) => {
+		updateSettings({ defaultDeck: value });
 	};
 
+
 	// --- LÓGICA DO "PERSONALIZADO" ---
-
-	// 1. Gera a string atual "WxH"
+	// O select agora só deve mostrar presets. A opção "Personalizado" é removida da lógica do Select.
 	const currentResString = `${settings.windowWidth}x${settings.windowHeight}`;
-
-	// 2. Verifica se a resolução atual bate com alguma da lista predefinida
 	const isPreset = WINDOW_RESOLUTIONS.some(
 		res => `${res.width}x${res.height}` === currentResString
 	);
 
-	// 3. Define o valor do Select: se for preset, usa o valor "WxH", senão usa "custom"
-	const selectValue = isPreset ? currentResString : 'custom';
+	// O valor do select deve ser o preset atual ou o primeiro preset, pois não há mais "custom" válido.
+	const selectValue = isPreset ? currentResString : `${WINDOW_RESOLUTIONS[0].width}x${WINDOW_RESOLUTIONS[0].height}`;
 
 	return (
 		<div className="p-6 max-w-2xl">
@@ -159,13 +118,21 @@ const SettingsScreen: React.FC = () => {
 				Ajuste as preferências do aplicativo e os valores padrão de importação.
 			</p>
 
+			{/* Exibição de Erros do Anki */}
+			{ankiError && (
+				<div className="p-4 mb-4 bg-destructive/20 text-destructive rounded-md font-medium border border-destructive/50">
+					⚠️ Erro de Conexão: {ankiError}
+					<button onClick={loadAnkiData} className="ml-2 underline hover:no-underline font-bold">Tentar Recarregar?</button>
+				</div>
+			)}
+
 			<div className="space-y-10">
 
 				{/* --- 1. CONFIGURAÇÕES DA JANELA --- */}
 				<section>
-					<h2 className="text-xl font-semibold text-foreground mb-4">Aparência da Janela</h2>
-					<p className="text-sm text-muted-foreground mb-3">
-						Selecione o tamanho padrão ou redimensione a janela manualmente.
+					<h2 className="text-xl font-semibold text-foreground mb-2">Tamanho da Janela</h2>
+					<p className="text-sm text-muted-foreground mb-6">
+						Selecione o tamanho padrão da janela.
 					</p>
 
 					<div className="max-w-xs">
@@ -178,26 +145,14 @@ const SettingsScreen: React.FC = () => {
 								<SelectValue placeholder="Selecione a Resolução" />
 							</SelectTrigger>
 							<SelectContent>
-								{/* Opções Predefinidas */}
 								{WINDOW_RESOLUTIONS.map(({ width, height, label }) => (
 									<SelectItem key={`${width}x${height}`} value={`${width}x${height}`}>
 										{label} ({width}x{height})
 									</SelectItem>
 								))}
-
-								{/* Opção Personalizada: Só aparece (ou é selecionável) se estiver ativa */}
-								{!isPreset && (
-									<SelectItem value="custom">
-										Personalizado ({settings.windowWidth}x{settings.windowHeight})
-									</SelectItem>
-								)}
+								{/* REMOVIDO: Opção "Personalizado" */}
 							</SelectContent>
 						</Select>
-						<p className="mt-2 text-xs text-secondary-foreground">
-							{isPreset
-								? "A alteração será aplicada na próxima vez que a janela for restaurada."
-								: "Resolução personalizada detectada."}
-						</p>
 					</div>
 				</section>
 
@@ -205,29 +160,56 @@ const SettingsScreen: React.FC = () => {
 
 				{/* --- 2. VALORES PADRÃO DE IMPORTAÇÃO --- */}
 				<section>
-					<h2 className="text-xl font-semibold text-foreground mb-4">Padrões de Importação</h2>
+					<h2 className="text-xl font-semibold text-foreground mb-2">Padrões de Importação</h2>
+					<p className="text-sm text-muted-foreground mb-1">
+						Selecione as configurações de importação padrão.
+					</p>
+					<p className="text-sm text-muted-foreground mb-6">
+						 Continuará sendo possível trocar a qualquer momento na tela de importação
+					</p>
+
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+
+						{/* SELECT PARA DECK PADRÃO */}
 						<div>
 							<Label htmlFor="defaultDeck" className="text-sm font-medium leading-none mb-1 block">Deck Padrão</Label>
-							<Input
-								id="defaultDeck"
+							<Select
 								value={settings.defaultDeck}
-								onChange={handleInputChange}
-								placeholder="Ex: Meu Novo Deck"
-								className="bg-input"
-							/>
+								onValueChange={handleDefaultDeckChange}
+								disabled={isLoading || ankiError !== null}
+							>
+								<SelectTrigger id="defaultDeck" className="w-full bg-input">
+									<SelectValue placeholder={isLoading ? 'Carregando decks...' : (ankiError || 'Selecione o Deck Padrão')} />
+								</SelectTrigger>
+								<SelectContent>
+									{ankiError && (
+										<SelectItem value="error" disabled>{ankiError}</SelectItem>
+									)}
+									{deckNames.map((deck) => (
+										<SelectItem key={deck} value={deck}>
+											{deck}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
+
+						{/* SELECT PARA TIPO DE NOTA PADRÃO */}
 						<div>
 							<Label htmlFor="defaultModel" className="text-sm font-medium leading-none mb-1 block">Tipo de Nota Padrão</Label>
 							<Select
 								value={settings.defaultModel}
-								onValueChange={(value: string) => updateSettings({ defaultModel: value as AllowedModel })}
+								onValueChange={(value) => updateSettings({ defaultModel: value as AllowedModel })}
+								disabled={isLoading || ankiError !== null}
 							>
 								<SelectTrigger id="defaultModel" className="w-full bg-input">
-									<SelectValue placeholder="Selecione o Tipo de Nota" />
+									<SelectValue placeholder={isLoading ? 'Carregando modelos...' : (ankiError || 'Selecione o Tipo de Nota')} />
 								</SelectTrigger>
 								<SelectContent>
-									{AVAILABLE_MODELS.map((model) => (
+									{ankiError && (
+										<SelectItem value="error" disabled>{ankiError}</SelectItem>
+									)}
+									{modelNames.map((model) => (
 										<SelectItem key={model} value={model}>
 											{model}
 										</SelectItem>
@@ -240,31 +222,74 @@ const SettingsScreen: React.FC = () => {
 
 				<Separator />
 
-				{/* --- 3. DELIMITADOR --- */}
+				{/* --- 3. DELIMITADORES --- */}
 				<section>
-					<h2 className="text-xl font-semibold text-foreground mb-4">Delimitador de Campo (CSV)</h2>
-					<div className="max-w-xs">
-						<Select
-							value={settings.fieldDelimiter}
-							onValueChange={handleDelimiterChange}
-						>
-							<SelectTrigger id="delimiter" className="w-full bg-input">
-								<SelectValue placeholder="Selecione o Delimitador" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value=";">Ponto e Vírgula (;)</SelectItem>
-								<SelectItem value="|">Pipe (|)</SelectItem>
-								<SelectItem value="\t">Tabulação (TAB)</SelectItem>
-							</SelectContent>
-						</Select>
+					<h2 className="text-xl font-semibold text-foreground mb-3">Delimitadores de Campo</h2>
+					<p className="text-sm text-muted-foreground mb-7">
+						Defina o delimitador usado no seu texto de entrada e o delimitador configurado no seu Anki.
+					</p>
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+						{/* Delimitador USADO PELO PROGRAMA (ENTRADA) */}
+						<div>
+							<Label htmlFor="programDelimiter" className="text-sm font-medium leading-none mb-2 block">Delimitador do <span className='font-bold text-blue-400'>Programa</span></Label>
+							<Select
+								value={settings.fieldDelimiter}
+								onValueChange={handleProgramDelimiterChange}
+							>
+								<SelectTrigger id="programDelimiter" className="w-full bg-input">
+									<SelectValue placeholder="Selecione o Delimitador" />
+								</SelectTrigger>
+								<SelectContent>
+									{DELIMITER_OPTIONS.map(opt => (
+										<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="mt-2 text-xs text-muted-foreground">
+								Este é o delimitador usado no texto que você cola.
+							</p>
+						</div>
+
+						{/* Delimitador CONFIGURADO NO ANKI (SAÍDA) */}
+						<div>
+							<Label htmlFor="ankiDelimiter" className="text-sm font-medium leading-none mb-2 block">Delimitador do <span className='font-bold text-blue-400'>Anki</span></Label>
+							<Select
+								value={settings.ankiDelimiter}
+								onValueChange={handleAnkiDelimiterChange}
+							>
+								<SelectTrigger id="ankiDelimiter" className="w-full bg-input">
+									<SelectValue placeholder="Selecione o Delimitador" />
+								</SelectTrigger>
+								<SelectContent>
+									{DELIMITER_OPTIONS.map(opt => (
+										<SelectItem
+											key={opt.value}
+											value={opt.value}
+											// Desabilita e adiciona o aviso para opções que não são o Ponto e Vírgula
+											disabled={opt.value !== ';'}
+											className={opt.value !== ';' ? 'text-muted-foreground italic' : ''}
+										>
+											{opt.label}
+											{opt.value !== ';' && ' (Em desenvolvimento)'}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<p className="mt-2 text-xs text-muted-foreground">
+								Deve ser igual ao delimitador configurado nas opções de importação do Anki.
+							</p>
+						</div>
 					</div>
 				</section>
 
 				<Separator />
 
 				{/* --- 4. FILTRO DE MODELOS --- */}
-				<section>
+				{/* <section>
 					<h2 className="text-xl font-semibold text-foreground mb-4">Tipos de Nota Permitidos</h2>
+					<p className="text-sm text-muted-foreground mb-3">
+						Selecione quais tipos de nota o programa deve tentar reconhecer e processar.
+					</p>
 					<div className="grid gap-3">
 						{AVAILABLE_MODELS.map((model) => (
 							<div key={model} className="flex items-center space-x-3">
@@ -279,7 +304,7 @@ const SettingsScreen: React.FC = () => {
 							</div>
 						))}
 					</div>
-				</section>
+				</section> */}
 			</div>
 		</div>
 	);

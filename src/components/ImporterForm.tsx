@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-	getDeckNames,
-	getModelNames,
 	addNotes,
 	getModelFieldNames,
-	getVersion,
-} from '../api/AnkiService';
+} from '../api/AnkiService'; // Removidos getDeckNames, getModelNames, getVersion
 import { parseNotesFromCSVText } from '../lib/parser';
 import type { PreviewCard, Note } from '../api/types';
 import { Button } from '@/components/ui/button';
@@ -15,59 +12,27 @@ import { PreviewTable } from '@/components/PreviewTable';
 import { CardModal } from '@/components/CardModal';
 import { AnkiStatusIndicator } from './AnkiStatusIndicator'
 import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select';
-
-import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-// -----------------------------------------------------------
-// Componente CustomSelect Reimplementado usando shadcn/ui Select
-// -----------------------------------------------------------
-interface CustomSelectProps {
-	value: string;
-	onValueChange: (value: string) => void;
-	options: string[];
-	placeholder: string;
-	disabled: boolean;
-}
-
-const CustomSelect: React.FC<CustomSelectProps> = ({ value, onValueChange, options, placeholder, disabled }) => (
-	<Select value={value} onValueChange={onValueChange} disabled={disabled}>
-		<SelectTrigger className="w-full bg-input border-border text-foreground focus:ring-ring disabled:opacity-50">
-			<SelectValue placeholder={placeholder} />
-		</SelectTrigger>
-		<SelectContent className="bg-popover text-popover-foreground border-border">
-			{options.map((option) => (
-				<SelectItem
-					key={option}
-					value={option}
-					className="hover:bg-accent hover:text-accent-foreground"
-				>
-					{option}
-				</SelectItem>
-			))}
-		</SelectContent>
-	</Select>
-);
-// -----------------------------------------------------------
+import { SelectPadronizado } from './ui/SelectPadronizado';
+import { useSettings } from './context/SettingsContext';
 
 export const ImporterForm: React.FC = () => {
-	// Estado para armazenar os dados do Anki
-	const [deckNames, setDeckNames] = useState<string[]>([]);
-	const [modelNames, setModelNames] = useState<string[]>([]);
+	// --- HOOK DO CONTEXTO ---
+	const { settings, ankiData } = useSettings();
+	const { deckNames, modelNames, isLoading, error: ankiError, isConnected, loadAnkiData } = ankiData;
+	// ------------------------
+
+	// Estado para armazenar os campos do modelo (ainda dependente do modelo selecionado)
 	const [fieldNames, setFieldNames] = useState<string[]>([]);
 
-	const [selectedDeck, setSelectedDeck] = useState('');
-	const [selectedModel, setSelectedModel] = useState('');
+	// Agora usando os padrões do SettingsContext como valor inicial
+	const [selectedDeck, setSelectedDeck] = useState(settings.defaultDeck);
+	const [selectedModel, setSelectedModel] = useState(settings.defaultModel);
+
 	const [csvText, setCsvText] = useState('');
 
 	const [previewCards, setPreviewCards] = useState<PreviewCard[] | null>(null);
@@ -75,54 +40,21 @@ export const ImporterForm: React.FC = () => {
 		useState<'form' | 'preview'>('form');
 	const [selectedCard, setSelectedCard] = useState<PreviewCard | null>(null);
 
-	const [isLoading, setIsLoading] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null); // Erros internos do form/parsing
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 	const [capturedText, setCapturedText] = useState('');
 
-	const isConnected = !isLoading && !error;
-
-	const ALLOWED_MODELS = [
-		'Básico',
-		'Básico (digite a resposta)',
-		'Básico (e cartão invertido)',
-		'Omissão de Palavras',
-	];
-
-	// Carregar Decks e Models
-	useEffect(() => {
-		const loadAnkiData = async () => {
-			setError(null);
-			setSuccessMessage(null);
-			try {
-				await getVersion();
-				const decks = await getDeckNames();
-				const allModels = await getModelNames(); // Obtém TODOS os modelos
-
-				// --- APLICAÇÃO DO FILTRO ---
-				const filteredModels = allModels.filter(modelName =>
-					ALLOWED_MODELS.includes(modelName)
-				);
-				// ---------------------------
-
-				setDeckNames(decks);
-				setModelNames(filteredModels); // Define APENAS os modelos filtrados
-			} catch (err: any) {
-				setError(err.message || 'Erro desconhecido ao conectar ao Anki.');
-			} finally {
-				setIsLoading(false);
-			}
-		};
-		loadAnkiData();
-	}, []);
 
 	// Carregar fields quando um Model for escolhido
 	useEffect(() => {
-		if (selectedModel) {
+		// Usar o modelo padrão do Contexto se nada estiver selecionado
+		const currentModel = selectedModel || settings.defaultModel;
+
+		if (currentModel) {
 			const loadFields = async () => {
 				try {
-					const fields = await getModelFieldNames(selectedModel);
+					const fields = await getModelFieldNames(currentModel);
 					setFieldNames(fields);
 				} catch (err: any) {
 					setError(err.message || 'Erro ao carregar campos do modelo.');
@@ -132,7 +64,15 @@ export const ImporterForm: React.FC = () => {
 		} else {
 			setFieldNames([]);
 		}
-	}, [selectedModel]);
+	}, [selectedModel, settings.defaultModel]);
+
+
+	// Sincroniza os selects com os valores padrão do contexto
+	useEffect(() => {
+		setSelectedDeck(settings.defaultDeck);
+		setSelectedModel(settings.defaultModel);
+	}, [settings.defaultDeck, settings.defaultModel]);
+
 
 	// Captura de texto pelo atalho global
 	useEffect(() => {
@@ -144,11 +84,12 @@ export const ImporterForm: React.FC = () => {
 				setSuccessMessage(null);
 				setCurrentView('form');
 			};
+			// Registrando listener para o atalho global de captura de texto
 			window.electronAPI.receiveGlobalShortcutText(listener);
 		}
 	}, []);
 
-	// Parsing
+	// Parsing do CSV para pré-visualização
 	const handleParse = useCallback(
 		(e: React.FormEvent) => {
 			e.preventDefault();
@@ -164,7 +105,9 @@ export const ImporterForm: React.FC = () => {
 				const parsed = parseNotesFromCSVText(
 					csvText,
 					selectedDeck,
-					selectedModel
+					selectedModel,
+					settings.fieldDelimiter,
+					settings.ankiDelimiter
 				);
 
 				if (parsed.length === 0) {
@@ -178,10 +121,10 @@ export const ImporterForm: React.FC = () => {
 				setError(`Erro de Parsing: ${parseError.message}`);
 			}
 		},
-		[csvText, selectedDeck, selectedModel]
+		[csvText, selectedDeck, selectedModel, settings.fieldDelimiter, settings.ankiDelimiter]
 	);
 
-	// Importação
+	// Importação das notas para o Anki
 	const handleImport = useCallback(async () => {
 		if (!previewCards || previewCards.length === 0) return;
 
@@ -214,6 +157,7 @@ export const ImporterForm: React.FC = () => {
 		}
 	}, [previewCards, selectedDeck]);
 
+	// Alterna o status de importação de um card na pré-visualização
 	const handleToggleImport = useCallback(
 		(id: number) => {
 			if (!previewCards) return;
@@ -228,16 +172,18 @@ export const ImporterForm: React.FC = () => {
 		[previewCards]
 	);
 
+	// Abre o modal de visualização de card
 	const handleOpenModal = useCallback((card: PreviewCard) => {
 		setSelectedCard(card);
 	}, []);
 
+	// Fecha o modal de visualização de card
 	const handleCloseModal = useCallback(() => {
 		setSelectedCard(null);
 	}, []);
 
+	const formError = error || ankiError;
 	const isFormValid = selectedDeck && selectedModel && csvText.trim();
-	const isAnkiConnected = !isLoading && !error;
 
 	return (
 		<div className="max-w-6xl mx-auto p-6 text-card-foreground shadow-xl rounded-lg">
@@ -249,25 +195,32 @@ export const ImporterForm: React.FC = () => {
 						: 'Prévia e Confirmação'}
 				</h2>
 
+				{/* Indicador de status de conexão com Anki */}
 				<AnkiStatusIndicator
 					isLoading={isLoading}
-					error={error}
+					error={ankiError}
 					isConnected={isConnected}
 				/>
 			</div>
 
-			{error && (
+			{/* Exibição de Erros */}
+			{formError && (
 				<div className="p-4 mb-4 bg-destructive/20 text-destructive rounded-md font-medium border border-destructive/50">
-					❌ Erro: {error}
+					❌ Erro: {formError}.
+					{!isConnected && ankiError && (
+						<button onClick={loadAnkiData} className="ml-2 underline hover:no-underline font-bold">Tentar Recarregar?</button>
+					)}
 				</div>
 			)}
 
+			{/* Exibição de Mensagens de Sucesso */}
 			{successMessage && (
 				<div className="p-4 mb-4 bg-secondary text-secondary-foreground rounded-md font-medium border border-border">
 					{successMessage}
 				</div>
 			)}
 
+			{/* Notificação de texto capturado */}
 			{capturedText && currentView === 'form' && (
 				<div className="p-3 mb-4 bg-primary/20 text-secondary-foreground rounded-md font-medium text-sm border border-primary/50">
 					✨ Texto capturado via atalho global: <strong>{capturedText.substring(0, 100)}...</strong>
@@ -294,12 +247,12 @@ export const ImporterForm: React.FC = () => {
 							</TooltipProvider>
 						</div>
 
-						<CustomSelect
+						<SelectPadronizado
 							value={selectedDeck}
 							onValueChange={setSelectedDeck}
 							options={deckNames}
 							placeholder="Escolha seu Baralho."
-							disabled={!isAnkiConnected}
+							disabled={!isConnected || isLoading}
 						/>
 					</div>
 
@@ -321,12 +274,13 @@ export const ImporterForm: React.FC = () => {
 							</TooltipProvider>
 						</div>
 
-						<CustomSelect
+						{/* Uso do SelectPadronizado para Tipo de Nota */}
+						<SelectPadronizado
 							value={selectedModel}
 							onValueChange={setSelectedModel}
 							options={modelNames}
 							placeholder="Escolha o Tipo de Nota gerada (Ex: Básico)."
-							disabled={!isAnkiConnected}
+							disabled={!isConnected || isLoading}
 						/>
 					</div>
 
@@ -338,9 +292,10 @@ export const ImporterForm: React.FC = () => {
 								{fieldNames.length > 0 ? fieldNames.join(', ') : 'Carregando campos...'}
 							</p>
 							<p className="mt-2 text-primary text-xs">
-								Lembrete: Seu texto deve mapear para os campos, seguido pelas Tags.
+								Lembrete: Seu texto deve mapear para os campos, seguido pelas Tags. O delimitador de campo usado é
+								<strong>"{settings.fieldDelimiter}"</strong>.
 								<br />
-								<strong>Formato Esperado:</strong> Frente;Verso;Tag1,Tag2
+								<strong>Formato Esperado:</strong> Frente{settings.fieldDelimiter}Verso{settings.fieldDelimiter}Tag1,Tag2
 							</p>
 						</div>
 					)}
@@ -357,7 +312,7 @@ export const ImporterForm: React.FC = () => {
 									</TooltipTrigger>
 									<TooltipContent side="right" className="max-w-xs">
 										Cole uma lista de flashcards, um por linha.
-										Separe frente e verso com ";"
+										Separe frente e verso com "{settings.fieldDelimiter}"
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
@@ -369,7 +324,7 @@ export const ImporterForm: React.FC = () => {
 							value={csvText}
 							onChange={(e: any) => setCsvText(e.target.value)}
 							placeholder="Cole seu texto aqui."
-							disabled={!isAnkiConnected || isSubmitting}
+							disabled={!isConnected || isSubmitting}
 							className="bg-input border-border text-foreground focus:ring-ring"
 						/>
 					</div>
@@ -377,9 +332,10 @@ export const ImporterForm: React.FC = () => {
 					{/* Botão de prévia */}
 					<Button
 						type="submit"
-						disabled={!isFormValid || isSubmitting}
+						disabled={!isFormValid || isSubmitting || !isConnected}
 						className="w-full h-12 text-lg bg-primary text-primary-foreground hover:bg-primary/90"
 					>
+						{/* Exibe a contagem de cards a serem analisados */}
 						{isSubmitting
 							? 'Analisando...'
 							: `Analisar e Pré-visualizar ${csvText.trim()
@@ -390,6 +346,7 @@ export const ImporterForm: React.FC = () => {
 				</form>
 			)}
 
+			{/* Visualização da Prévia */}
 			{currentView === 'preview' && previewCards && (
 				<PreviewTable
 					previewCards={previewCards}
@@ -401,6 +358,7 @@ export const ImporterForm: React.FC = () => {
 				/>
 			)}
 
+			{/* Modal de visualização de card */}
 			{selectedCard && (
 				<CardModal card={selectedCard} onClose={handleCloseModal} />
 			)}
