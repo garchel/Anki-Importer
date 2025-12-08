@@ -71,7 +71,7 @@ Este projeto é open-source. Sinta-se à vontade para inspecionar o código, rel
 
 1.  Clone o repositório:
     ```bash
-    git clone [LINK_DO_SEU_REPO]
+    git clone https://github.com/garchel/Anki-Importer.git
     cd anki-importer
     ```
 2.  Instale as dependências:
