@@ -1,5 +1,6 @@
 {
-  "name": "package.json",
+  "name": "anki-importer",
+	"productName": "Anki Importer",
   "private": true,
   "version": "0.0.0",
   "scripts": {

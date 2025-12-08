@@ -2,6 +2,8 @@ const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, clipboard, 
 const path = require('path');
 const Store = require('electron-store').default;
 
+app.setName("Anki Importer");
+
 // Define o esquema de persistência, incluindo todas as settings do frontend
 const store = new Store({
 	name: 'user-settings', // Nome do arquivo JSON
@@ -13,7 +15,7 @@ const store = new Store({
 		allowedModels: ['Básico', 'Básico (e cartão invertido)', 'Omissão de Palavras'],
 		fieldDelimiter: ';',
 		ankiDelimiter: ';',
-		globalShortcut: process.platform === 'darwin'? 'Command+G' : 'Control+G'
+		globalShortcut: process.platform === 'darwin' ? 'Command+G' : 'Control+G'
 	}
 });
 
@@ -38,6 +40,8 @@ function createWindow() {
 	const windowWidth = store.get('windowWidth');
 	const windowHeight = store.get('windowHeight');
 
+	// Define o caminho para o ícone
+	const iconPath = path.join(app.getAppPath(), 'public', 'assets', 'icon.png');
 
 	mainWindow = new BrowserWindow({
 		// Usa as dimensões padrão ou salvas
@@ -46,9 +50,10 @@ function createWindow() {
 		minWidth: 600,
 		minHeight: 400,
 		title: "Anki Importer",
+		icon: iconPath,
 
-		frame:false,
-		autoHideMenuBar:true,
+		frame: false,
+		autoHideMenuBar: true,
 
 		webPreferences: {
 			// Garantir que a comunicação do Front-end seja segura
@@ -91,7 +96,7 @@ function createWindow() {
  */
 function createTray() {
 	// Caminho para o ícone. Use um arquivo pequeno (ex: icon.png)
-	const iconPath = path.join(app.getAppPath(), 'icon.png');
+	const iconPath = path.join(app.getAppPath(), 'public', 'assets', 'icon.png');
 	// Cria o objeto de imagem, redimensionando para o tamanho padrão da bandeja (16x16)
 	const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
 
@@ -135,7 +140,7 @@ function registerGlobalShortcut() {
 	const success = globalShortcut.register(shortcut, () => {
 
 		mainWindow.webContents.send('navigate-to-importer');
-		
+
 		// 1. Pega o texto da área de transferência
 		const selectedText = clipboard.readText().trim();
 
@@ -154,7 +159,7 @@ function registerGlobalShortcut() {
 				app.show(); // Traz o aplicativo de volta para o primeiro plano (útil para macOS)
 			}
 
-			
+
 
 			// 3. Envia o texto para o processo de renderização (React)
 			if (selectedText) {

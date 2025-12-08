@@ -10,7 +10,7 @@ const AboutScreen: React.FC = () => {
 	const devInfo = {
 		name: "Paulo Victor",
 		bio: "Desenvolvedor Full-Stack apaixonado por automatizar processos. Criei esta ferramenta para otimizar meu próprio uso do Anki e espero que seja útil para você também!",
-		photoUrl: "/assets/foto.jpg",
+		photoUrl: "/assets/foto3.jpg",
 		github: "https://github.com/garchel",
 		linkedin: "https://www.linkedin.com/in/paulovictorco/",
 		portfolio: "https://paulovictor.vercel.app/",
@@ -36,7 +36,7 @@ const AboutScreen: React.FC = () => {
 					<img
 						src={devInfo.photoUrl}
 						alt={devInfo.name}
-						className="w-32 h-32 rounded-full object-cover border-4 border-orange-500 shadow-xl mb-4"
+						className="size-40 rounded-full object-cover border-4 border-orange-500 shadow-xl mb-4"
 					/>
 
 					<CardTitle className="text-3xl font-extrabold text-center">{devInfo.name} <span className='text-orange-500 italic '>"GarcheL"</span></CardTitle>

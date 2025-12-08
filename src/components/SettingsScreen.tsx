@@ -300,9 +300,9 @@ const SettingsScreen: React.FC = () => {
 				<Separator />
 
 				<section>
-					<h2 className="text-xl font-semibold text-foreground mb-2">Atalho Global (Gatilho)</h2>
+					<h2 className="text-xl font-semibold text-foreground mb-2">Atalho</h2>
 					<p className="text-sm text-muted-foreground mb-6">
-						Defina a combinação de teclas para ativar o aplicativo e capturar o texto selecionado.
+						Defina a combinação de teclas para ativar o aplicativo e capturar o texto.
 					</p>
 
 					<div className="flex flex-col sm:flex-row gap-4 max-w-lg items-end">

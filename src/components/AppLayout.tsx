@@ -52,7 +52,7 @@ export const AppLayout: React.FC = () => {
 					<WindowControls />
 				</div>
 				<div className='absolute left-1/2 transform -translate-x-1/2 text-sm text-muted-foreground pt-1' style={{ WebkitAppRegion: 'no-drag' }}>
-					Anki Importer - <span className='italic text-orange-500'>by @Garchel</span>
+					Anki Importer - <span className='italic text-primary'>by @Garchel</span>
 				</div>
 			</div>
 

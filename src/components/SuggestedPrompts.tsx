@@ -19,7 +19,7 @@ const cardExplanations: Record<CardModel, string> = {
 	'Básico': 'Formato simples de Pergunta;Resposta (Frente;Verso).',
 	'Invertido': 'Formato de Pergunta;Resposta, mas a IA deve criar questões que funcionem bem se as cartas forem invertidas (Verso;Frente).',
 	'Escrita': 'Formato de Pergunta;Resposta, onde a "Resposta" deve ser uma palavra ou frase concisa para digitação.',
-	'Ocultação (Cloze)': 'A IA deve usar a sintaxe do Anki para ocultação de palavras: "Texto com {{c1::palavra oculta}}". O formato final deve ser apenas o texto com a ocultação.'
+	'Ocultação (Cloze)': 'A IA deve usar a sintaxe do Anki para ocultação de palavras: "Texto com {{c1::palavra oculta}}". O formato final deve ser: Texto com Ocultação{{DELIMITADOR}}Verso Extra{{DELIMITADOR}}Tags.',
 };
 
 const defaultPromptBase = `
@@ -27,9 +27,10 @@ A partir de agora e durante toda essa conversa atue como um Especialista em Apre
 Seu objetivo é converter o texto que eu enviar em flashcards otimizados para memorização ativa e repetição espaçada.
 
 REGRAS DE FORMATAÇÃO (CRÍTICO):
-1. A saída deve ser exclusivamente um bloco de código.
+1. A saída deve ser exclusivamente um bloco de código (tabela).
 2. O formato de saída deve ser compatível com importação CSV.
 3. O delimitador de colunas DEVE ser o {{DELIMITADOR}}.
+4. **IMPORTANTE:** Se a coluna "Tags" for incluída, as tags individuais dentro dessa coluna devem ser separadas por **espaço** ou **vírgula** (ex: Tag1,Tag2 ou Tag1 Tag2).
 
 FORMATO:
 {{FORMATO_FINAL}}
@@ -44,7 +45,6 @@ Se não for instruído quantos flashcards devem ser gerados, garanta que há fla
 
 \n\n[COLE SEU MATERIAL AQUI]
 `;
-
 const DELIMITER_OPTIONS: { value: Delimiter; label: string }[] = [
 	{ value: ';', label: 'Ponto e Vírgula (;)' },
 	{ value: '|', label: 'Pipe (|)' },
@@ -67,17 +67,23 @@ export const SuggestedPrompts: React.FC = () => {
 	const generatedPrompt = useMemo(() => {
 		// 1. Define o Formato Final (colunas)
 		const formatParts = [];
+		let instrucaoEspecificaCloze = '';
+
 		if (cardModel === 'Ocultação (Cloze)') {
-			formatParts.push('Texto com Ocultação');
+			// Campos para Cloze: Texto, Verso Extra (e Tags)
+			formatParts.push('Texto com Ocultação', 'Verso Extra');
+			instrucaoEspecificaCloze = 'Para o modelo de Ocultação, use o formato: Texto com {{c1::cloze}};Verso Extra;[Tags].';
 		} else {
+			// Campos para Modelos Padrão: Frente, Verso (e Tags)
 			formatParts.push('Frente', 'Verso');
 		}
 
 		if (includeTags === 'Sim') {
-			formatParts.push('Tags');
+			formatParts.push('Tags (Opcional)'); // Adiciona a coluna Tags
 		}
 
-		const finalFormat = formatParts.join(delimiter);
+		// Adiciona a quebra de linha para a IA entender que é uma estrutura de tabela/CSV
+		const finalFormat = formatParts.join(delimiter) + '\n[... Mais linhas]';
 
 		// 2. Substitui as Variáveis no Prompt Base
 		let prompt = defaultPromptBase;
@@ -87,10 +93,19 @@ export const SuggestedPrompts: React.FC = () => {
 		prompt = prompt.replace('{{MODELO_DE_CARD}}', cardModel);
 		prompt = prompt.replace('{{EXPLICACAO_MODELO}}', cardExplanations[cardModel]);
 
+		// 💡 NOVO: Substituição da instrução específica para Cloze. Se não for Cloze, remove a variável.
+		if (cardModel === 'Ocultação (Cloze)') {
+			prompt = prompt.replace('{{INSTRUCAO_ESPECIFICA_CLOZE}}', instrucaoEspecificaCloze);
+		} else {
+			prompt = prompt.replace('{{INSTRUCAO_ESPECIFICA_CLOZE}}', '');
+		}
+
+
 		// Manipulação do escape
 		if (delimiter === ';') {
 			prompt = prompt.replace('\\{{DELIMITADOR}}', '\\;');
 		} else {
+			// Usa o próprio delimitador no escape (ex: \\| ou \\//)
 			prompt = prompt.replace('\\{{DELIMITADOR}}', `\\${delimiter}`);
 		}
 
@@ -174,6 +189,14 @@ export const SuggestedPrompts: React.FC = () => {
 
 			<hr className="mb-6 border-border" />
 
+			{/* Nota de rodapé (simplificada) */}
+			<div className="my-8 p-4 bg-secondary text-secondary-foreground rounded-lg border border-border">
+				<h3 className="font-semibold mb-1">Dica de Uso</h3>
+				<p className="text-sm">
+					Copie o prompt abaixo e cole no campo de texto da sua IA, seguido pelo conteúdo (texto, anotações ou código) que você deseja converter em flashcards.
+				</p>
+			</div>
+
 			{/* Prompt Gerado Dinamicamente */}
 			<PromptCard
 				title="Prompt Otimizado"
@@ -184,13 +207,6 @@ export const SuggestedPrompts: React.FC = () => {
 				promptText={generatedPrompt}
 			/>
 
-			{/* Nota de rodapé (simplificada) */}
-			<div className="mt-8 p-4 bg-secondary text-secondary-foreground rounded-lg border border-border">
-				<h3 className="font-semibold mb-1">Dica de Uso</h3>
-				<p className="text-sm">
-					Copie o prompt acima e cole no campo de texto da sua IA, seguido pelo conteúdo (texto, anotações ou código) que você deseja converter em flashcards.
-				</p>
-			</div>
 		</div>
 	);
 };

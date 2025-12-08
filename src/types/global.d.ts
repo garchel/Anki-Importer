@@ -1,4 +1,3 @@
-// Declarações de Módulos (para imports que o TS não entende nativamente)
 declare module "@/components/ui/label";
 declare module "@/components/ui/checkbox";
 declare module "@/components/ui/separator";
