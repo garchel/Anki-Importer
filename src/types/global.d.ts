@@ -4,6 +4,8 @@ declare module "@/components/ui/checkbox";
 declare module "@/components/ui/separator";
 declare module "@/components/ui/input";
 
+type IpcChannel = 'global-shortcut-text' | 'navigate-to-importer';
+
 interface ElectronAPI {
 	// Função para receber o texto do atalho global (Alt+G)
 	receiveGlobalShortcutText: (callback: (text: string) => void) => void;
@@ -21,11 +23,11 @@ interface ElectronAPI {
 		settings: Partial<import("./caminho/para/o/seu/arquivo").AppSettings>
 	) => void;
 
-	onReceiveText: (callback: (value: string) => void) => void;
-
 	minimizeWindow: () => void;
 	maximizeWindow: () => void; // Ou restaurar, se já maximizada
 	closeWindow: () => void;
+
+	receive: (channel: IpcChannel, func: (...args: any[]) => void) => void;
 }
 
 // Estende a interface Window para incluir a nossa ElectronAPI

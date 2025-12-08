@@ -1,5 +1,6 @@
 import React from 'react';
-import { useSettings} from './context/SettingsContext';
+import { useState, useEffect } from 'react';
+import { useSettings } from './context/SettingsContext';
 import type {
 	FieldDelimiter,
 	AllowedModel,
@@ -14,6 +15,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const WINDOW_RESOLUTIONS = [
 	{ width: 800, height: 600, label: 'Pequena' },
@@ -28,14 +31,45 @@ const DELIMITER_OPTIONS: { value: FieldDelimiter; label: string }[] = [
 	{ value: '//', label: '//  (Barras Duplas)' },
 ];
 
+const MODIFIER_OPTIONS = [
+	{ value: 'Control', label: 'Control/Command' },
+	{ value: 'Alt', label: 'Alt' },
+	{ value: 'Shift', label: 'Shift' },
+];
+
 
 const SettingsScreen: React.FC = () => {
 	// --- HOOK DO CONTEXTO REAL ---
 	const { settings, updateSettings, ankiData } = useSettings();
 	const { deckNames, modelNames, isLoading, error: ankiError, isConnected, loadAnkiData } = ankiData;
-	// -----------------------------
+	const currentShortcutParts = settings.globalShortcut.split('+');
+	const initialModifier = currentShortcutParts.length > 1 ? currentShortcutParts[0] : 'Control';
+	const initialKey = currentShortcutParts.length > 1 ? currentShortcutParts[1] : 'G';
+	const [shortcutModifier, setShortcutModifier] = useState(initialModifier);
+	const [shortcutKey, setShortcutKey] = useState(initialKey);
 
-	// REMOVIDO: O useEffect que escutava o evento 'resize' do DOM. O redimensionamento manual agora é ignorado.
+	// Sincroniza estados locais com o estado global ao carregar
+	useEffect(() => {
+		const parts = settings.globalShortcut.split('+');
+		setShortcutModifier(parts.length > 1 ? parts[0] : 'Control');
+		setShortcutKey(parts.length > 1 ? parts[1] : 'G');
+	}, [settings.globalShortcut]);
+
+	// Função de salvamento (disparada pelo botão de salvar)
+	const handleSaveShortcut = () => {
+		const newShortcut = `${shortcutModifier}+${shortcutKey.toUpperCase()}`;
+		updateSettings({ globalShortcut: newShortcut });
+	};
+
+	// Função de redefinição
+	const handleResetShortcut = () => {
+		// O padrão é Control+G, que o Electron irá converter para Command+G no macOS.
+		const defaultShortcut = 'Control+G';
+		setShortcutModifier('Control');
+		setShortcutKey('G');
+		updateSettings({ globalShortcut: defaultShortcut });
+	};
+
 
 	// Handler para alternar Modelos Permitidos
 	const handleModelToggle = (model: AllowedModel, checked: CheckedState) => {
@@ -146,7 +180,7 @@ const SettingsScreen: React.FC = () => {
 						Selecione as configurações de importação padrão.
 					</p>
 					<p className="text-sm text-muted-foreground mb-6">
-						 Continuará sendo possível trocar a qualquer momento na tela de importação
+						Continuará sendo possível trocar a qualquer momento na tela de importação
 					</p>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
@@ -265,27 +299,64 @@ const SettingsScreen: React.FC = () => {
 
 				<Separator />
 
-				{/* --- 4. FILTRO DE MODELOS --- */}
-				{/* <section>
-					<h2 className="text-xl font-semibold text-foreground mb-4">Tipos de Nota Permitidos</h2>
-					<p className="text-sm text-muted-foreground mb-3">
-						Selecione quais tipos de nota o programa deve tentar reconhecer e processar.
+				<section>
+					<h2 className="text-xl font-semibold text-foreground mb-2">Atalho Global (Gatilho)</h2>
+					<p className="text-sm text-muted-foreground mb-6">
+						Defina a combinação de teclas para ativar o aplicativo e capturar o texto selecionado.
 					</p>
-					<div className="grid gap-3">
-						{AVAILABLE_MODELS.map((model) => (
-							<div key={model} className="flex items-center space-x-3">
-								<Checkbox
-									id={`model-${model}`}
-									checked={settings.allowedModels.includes(model)}
-									onCheckedChange={(checked: CheckedState) => handleModelToggle(model, checked)}
-								/>
-								<Label htmlFor={`model-${model}`} className="text-base font-normal cursor-pointer">
-									{model}
-								</Label>
-							</div>
-						))}
+
+					<div className="flex flex-col sm:flex-row gap-4 max-w-lg items-end">
+						{/* SELECT MODIFICADOR */}
+						<div className="flex-1 min-w-[150px]">
+							<Label htmlFor="shortcutModifier" className="text-sm font-medium leading-none mb-1 block">Modificador</Label>
+							<Select
+								value={shortcutModifier}
+								onValueChange={setShortcutModifier}
+							>
+								<SelectTrigger id="shortcutModifier" className="w-full bg-input">
+									<SelectValue placeholder="Selecione o Modificador" />
+								</SelectTrigger>
+								<SelectContent>
+									{MODIFIER_OPTIONS.map((opt) => (
+										<SelectItem key={opt.value} value={opt.value}>
+											{opt.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						{/* INPUT TECLA */}
+						<div className="w-20">
+							<Label htmlFor="shortcutKey" className="text-sm font-medium leading-none mb-1 block">Tecla</Label>
+							<Input
+								id="shortcutKey"
+								value={shortcutKey}
+								onChange={(e) => setShortcutKey(e.target.value.toUpperCase().slice(0, 1))}
+								maxLength={1}
+								className="w-full text-center bg-input"
+							/>
+						</div>
+
+						{/* BOTÃO SALVAR */}
+						<Button
+							onClick={handleSaveShortcut}
+							// Desabilita se o atalho atual for igual ao digitado
+							disabled={settings.globalShortcut === `${shortcutModifier}+${shortcutKey.toUpperCase()}`}
+						>
+							Salvar Atalho
+						</Button>
+
+						{/* BOTÃO REDEFINIR */}
+						<Button
+							variant="outline"
+							onClick={handleResetShortcut}
+							disabled={settings.globalShortcut === 'Control+G'}
+						>
+							Redefinir
+						</Button>
 					</div>
-				</section> */}
+				</section>
 			</div>
 		</div>
 	);

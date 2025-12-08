@@ -30,6 +30,9 @@ interface AppSettings {
 	allowedModels: AllowedModel[];
 	fieldDelimiter: FieldDelimiter; // Delimitador usado no input do usuário
 	ankiDelimiter: FieldDelimiter; // Delimitador configurado no Anki para exportação/importação
+
+	// Atalho Global
+	globalShortcut: string; // Ex: 'Control+G'
 }
 
 interface AnkiData {
@@ -60,6 +63,8 @@ const defaultSettings: AppSettings = {
 	],
 	fieldDelimiter: ';',
 	ankiDelimiter: ';',
+
+	globalShortcut: 'Control+G',
 };
 
 // --- Criação e Hook ---

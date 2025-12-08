@@ -35,10 +35,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
 	return (
 		<aside
-			className={`flex flex-col h-screen ${sidebarWidthClass} bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out flex-shrink-0 z-20`}
+			className={`flex flex-col h-screen ${sidebarWidthClass} bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out flex-shrink-0 z-30`}
 		>
 			{/* Header */}
-			<div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border">
+			<div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border mt-3">
 				<span
 					className={`
 						font-bold text-xl text-primary whitespace-nowrap overflow-hidden 
@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 								variant="ghost"
 								size="icon"
 								onClick={toggleSidebar}
-								className="h-10 w-10 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+								className="h-10 w-10 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground z-40"
 							>
 								<Menu className="h-5 w-5" />
 							</Button>

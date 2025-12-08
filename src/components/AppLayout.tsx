@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { ImporterForm } from './ImporterForm';
 import { useNavigation } from '@/hooks/useNavigation';
@@ -28,6 +29,16 @@ const renderScreen = (screen: AppScreen) => {
 
 export const AppLayout: React.FC = () => {
 	const { currentScreen, navigateTo, isSidebarOpen, toggleSidebar } = useNavigation();
+
+	useEffect(() => {
+		if (window.electronAPI) {
+			// Registrando listener para forçar a navegação para a tela 'importer'
+			window.electronAPI.receive('navigate-to-importer', () => {
+				// Garante que a tela de importação seja a tela ativa
+				navigateTo('importer');
+			});
+		}
+	}, [navigateTo]); // O 'navigateTo' deve ser uma dependência
 
 	return (
 		<div className="flex h-screen overflow-hidden relative">

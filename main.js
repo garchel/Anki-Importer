@@ -13,14 +13,23 @@ const store = new Store({
 		allowedModels: ['Básico', 'Básico (e cartão invertido)', 'Omissão de Palavras'],
 		fieldDelimiter: ';',
 		ankiDelimiter: ';',
+		globalShortcut: process.platform === 'darwin'? 'Command+G' : 'Control+G'
 	}
 });
+
+/**
+ * Retorna o atalho global configurado.
+ */
+function getGlobalShortcutFromStore() {
+	const defaultShortcut = process.platform === 'darwin' ? 'Command+G' : 'Control+G';
+	// Retorna o atalho salvo ou o padrão se não estiver definido
+	return store.get('globalShortcut', defaultShortcut);
+}
 
 // Variáveis para armazenar a janela principal e a bandeja (tray)
 let mainWindow = null;
 let tray = null;
 let appQuitting = false;
-
 
 /**
  * Cria a janela principal do aplicativo.
@@ -75,7 +84,6 @@ function createWindow() {
 		mainWindow = null;
 	});
 
-	// REMOVIDO: O listener mainWindow.on('resize', ...) que capturava o redimensionamento manual.
 }
 
 /**
@@ -120,9 +128,14 @@ function createTray() {
  * Registra o atalho global e define a ação.
  */
 function registerGlobalShortcut() {
-	const shortcut = process.platform === 'darwin' ? 'Command+G' : 'Control+G';
+	globalShortcut.unregisterAll();
+
+	const shortcut = getGlobalShortcutFromStore();
 
 	const success = globalShortcut.register(shortcut, () => {
+
+		mainWindow.webContents.send('navigate-to-importer');
+		
 		// 1. Pega o texto da área de transferência
 		const selectedText = clipboard.readText().trim();
 
@@ -140,6 +153,8 @@ function registerGlobalShortcut() {
 			if (process.platform === 'darwin') {
 				app.show(); // Traz o aplicativo de volta para o primeiro plano (útil para macOS)
 			}
+
+			
 
 			// 3. Envia o texto para o processo de renderização (React)
 			if (selectedText) {
@@ -215,10 +230,24 @@ function registerIpcHandlers() {
 		appQuitting = true;
 		app.quit();
 	});
+
+	// Handle para salvar configurações parciais do frontend (save-settings)
+	ipcMain.on('save-settings', (event, newSettings) => {
+		if (newSettings && typeof newSettings === 'object') {
+			for (const key in newSettings) {
+				// Salva cada propriedade na store de forma persistente
+				store.set(key, newSettings[key]);
+			}
+
+			// NOVO: Se o atalho global foi alterado, re-registra
+			if (Object.prototype.hasOwnProperty.call(newSettings, 'globalShortcut')) {
+				registerGlobalShortcut();
+			}
+		}
+	});
 }
 
 // --- Ciclo de vida do aplicativo ---
-
 // Quando o Electron estiver pronto para criar janelas e bandejas
 app.whenReady().then(() => {
 	createWindow();

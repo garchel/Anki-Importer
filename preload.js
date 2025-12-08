@@ -13,11 +13,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	// Método para salvar as configurações do frontend
 	saveSettings: (settings) => ipcRenderer.send('save-settings', settings),
 
-	// Método redundante mantido para compatibilidade
-	onReceiveText: (callback) => ipcRenderer.on('global-shortcut-text', (event, text) => callback(text)),
 
 	minimizeWindow: () => ipcRenderer.send('minimize-window'),
 	maximizeWindow: () => ipcRenderer.send('maximize-window'),
-	// Usamos 'quit-app' no main.js para garantir o fechamento total, conforme solicitado.
 	closeWindow: () => ipcRenderer.send('quit-app'),
+
+	receive: (channel, func) => {
+		const validChannels = ['global-shortcut-text', 'navigate-to-importer'];
+		if (validChannels.includes(channel)) {
+			ipcRenderer.on(channel, (event, ...args) => func(...args));
+		}
+	},
+
 });
