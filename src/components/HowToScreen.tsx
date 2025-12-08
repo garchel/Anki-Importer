@@ -64,12 +64,12 @@ const HowToScreen: React.FC = () => (
 				<AccordionTrigger className="text-xl font-semibold hover:no-underline">
 					<div className="flex items-center gap-3">
 						<span className="text-2xl font-extrabold text-primary">2</span>
-						Configurar o IP Local ⚙️
+						Configurar o AnkiConnect ⚙️
 					</div>
 				</AccordionTrigger>
 				<AccordionContent className="pb-4 pt-2">
 					<p className="text-muted-foreground mb-6">
-						Você precisa adicionar o endereço de rede do seu computador à lista de domínios permitidos do Anki Connect. Use o gerador abaixo para garantir a configuração correta:
+						Você precisa adicionar o seu computador à lista de domínios permitidos do Anki Connect. Use o gerador abaixo para garantir a configuração correta:
 					</p>
 
 					{/* CARD COM O JSON DE CONFIGURAÇÃO */}
@@ -81,7 +81,7 @@ const HowToScreen: React.FC = () => (
 
 						{/* Passo 2.1 CORRIGIDO: Substituído > por &gt; */}
 						<p className="text-sm text-foreground/80 flex items-start gap-2">
-							<span className="text-primary font-bold">2.1.</span> No Anki, vá em <span className='font-bold text-gray-300'>Ferramentas &gt; Extensões &gt; AnkiConnect &gt; Configurações</span>.
+							<span className="text-primary font-bold">2.1.</span> No Anki, vá em <span className='font-bold text-gray-300'>Ferramentas &gt; Extensões &gt; Clique duplo em 'AnkiConnect'</span>.
 						</p>
 
 						{/* Passo 2.2 */}
@@ -121,10 +121,10 @@ const HowToScreen: React.FC = () => (
 							<Code className="w-5 h-5 mt-0.5 text-primary flex-shrink-0" />
 							<div>
 								<p className="text-sm font-semibold text-foreground">
-									3.1. Gerar os Flashcards (Formato de Tabela)
+									3.1. Gerar os Flashcards
 								</p>
 								<p className="text-xs text-muted-foreground mt-0.5">
-									Use a sessão <span className='font-bold text-gray-300'>Prompts</span> para gerar seus flashcards (como tabelas CSV) usando IA.
+									Use a sessão <span className='font-bold text-gray-300'>Prompts</span> para gerar seus flashcards usando alguma IA.
 								</p>
 							</div>
 						</div>

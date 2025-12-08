@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	minimizeWindow: () => ipcRenderer.send('minimize-window'),
 	maximizeWindow: () => ipcRenderer.send('maximize-window'),
 	closeWindow: () => ipcRenderer.send('quit-app'),
+	openExternal: (url) => ipcRenderer.send('open-external-url', url),
 
 	receive: (channel, func) => {
 		const validChannels = ['global-shortcut-text', 'navigate-to-importer'];

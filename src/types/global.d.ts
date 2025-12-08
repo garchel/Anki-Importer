@@ -27,6 +27,7 @@ interface ElectronAPI {
 	closeWindow: () => void;
 
 	receive: (channel: IpcChannel, func: (...args: any[]) => void) => void;
+	openExternal: (url: string) => void;
 }
 
 // Estende a interface Window para incluir a nossa ElectronAPI

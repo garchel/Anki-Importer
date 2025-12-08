@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, clipboard, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, clipboard, ipcMain, shell } = require('electron');
 const path = require('path');
 const Store = require('electron-store').default;
 
@@ -234,6 +234,11 @@ function registerIpcHandlers() {
 		// Define a flag e encerra o aplicativo, ignorando a lógica do 'close' (hide)
 		appQuitting = true;
 		app.quit();
+	});
+
+	ipcMain.on('open-external-url', (event, url) => {
+		// Usa o módulo shell do Electron para abrir o URL no navegador padrão
+		shell.openExternal(url);
 	});
 
 	// Handle para salvar configurações parciais do frontend (save-settings)

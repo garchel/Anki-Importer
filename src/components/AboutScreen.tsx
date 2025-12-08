@@ -25,6 +25,15 @@ const AboutScreen: React.FC = () => {
 		setTimeout(() => setCopied(false), 2000);
 	}, [devInfo.pixKey]);
 
+	const openLink = useCallback((url: string) => {
+		if (window.electronAPI && window.electronAPI.openExternal) {
+			window.electronAPI.openExternal(url);
+		} else {
+			// Fallback (se o Electron não estiver disponível ou IPC não carregado)
+			window.open(url, '_blank');
+		}
+	}, []);
+
 	return (
 		<div className="p-6 max-w-6xl scrollbar-hide mx-auto">
 			<h1 className="text-3xl font-bold text-foreground mb-5">Conheça o Desenvolvedor</h1>
@@ -49,24 +58,23 @@ const AboutScreen: React.FC = () => {
 					</p>
 					<p className='text-gray-200 font-semibold text-center mx-auto mb-8'>Me recomenda no seu trabalho!!(sou legal)</p>
 
-					<hr className="mb-6 border-border  border-neutral-800" />
+					<hr className="mb-6  border-neutral-800" />
 
 					{/* Links Sociais e Profissionais */}
 					<div className="flex flex-wrap justify-center gap-4 mb-8">
-						<Button variant="outline" asChild>
-							<a href={devInfo.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2  hover:text-orange-500">
-								<Github className="w-4 h-4" /> GitHub
-							</a>
+						{/* Botão GitHub ajustado */}
+						<Button variant="outline" onClick={() => openLink(devInfo.github)} className="flex items-center gap-2 hover:text-orange-500">
+							<Github className="w-4 h-4" /> GitHub
 						</Button>
-						<Button variant="outline" asChild>
-							<a href={devInfo.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2  hover:text-orange-500">
-								<Linkedin className="w-4 h-4" /> LinkedIn
-							</a>
+
+						{/* Botão LinkedIn ajustado */}
+						<Button variant="outline" onClick={() => openLink(devInfo.linkedin)} className="flex items-center gap-2 hover:text-orange-500">
+							<Linkedin className="w-4 h-4" /> LinkedIn
 						</Button>
-						<Button variant="outline" asChild>
-							<a href={devInfo.portfolio} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2  hover:text-orange-500">
-								<Link className="w-4 h-4" /> Portfólio
-							</a>
+
+						{/* Botão Portfólio ajustado */}
+						<Button variant="outline" onClick={() => openLink(devInfo.portfolio)} className="flex items-center gap-2 hover:text-orange-500">
+							<Link className="w-4 h-4" /> Portfólio
 						</Button>
 					</div>
 
