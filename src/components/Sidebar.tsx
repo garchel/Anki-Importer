@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 			className={`flex flex-col h-screen ${sidebarWidthClass} bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 ease-in-out flex-shrink-0 z-30`}
 		>
 			{/* Header */}
-			<div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border mt-3">
+			<div className="flex items-center justify-between h-16 px-4 border-b border-sidebar-border mt-3.5">
 				<span
 					className={`
 						font-bold text-xl text-primary whitespace-nowrap overflow-hidden 
@@ -50,13 +50,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 				</span>
 
 				<TooltipProvider>
-					<Tooltip delayDuration={200}>
+					<Tooltip 
+					delayDuration={200}
+					open={!isSidebarOpen ? undefined : false}
+					onOpenChange={() => { }} // Bloqueia o fechamento automático se 'open' for definido
+					>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
 								size="icon"
 								onClick={toggleSidebar}
-								className="h-10 w-10 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground z-40"
+								className="h-8 w-10 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
 							>
 								<Menu className="h-5 w-5" />
 							</Button>
@@ -86,12 +90,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 						const Icon = item.icon;
 
 						return (
-							<Tooltip key={item.screen} delayDuration={200}>
+							<Tooltip 
+							key={item.screen} 
+							delayDuration={200}
+							open={!isSidebarOpen ? undefined : false} // Comportamento padrão (hover) se fechada; Força o fechamento se aberta.
+							onOpenChange={() => { }} // Bloqueia o fechamento automático se 'open' for definido
+							>
 								<TooltipTrigger asChild>
 									<Button
 										onClick={() => navigateTo(item.screen)}
 										className={`
-											flex items-center h-10 rounded-lg transition-colors duration-300
+											flex items-center justify-start h-10 rounded-lg transition-colors duration-300 w-full 
 											${isActive
 												? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 shadow-md"
 												: "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
