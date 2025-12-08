@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, Tray, nativeImage, globalShortcut, clipboard, ipcMain, shell } = require('electron');
 const path = require('path');
+const url = require('url');
 const Store = require('electron-store').default;
 
 app.setName("Anki Importer");
@@ -40,9 +41,10 @@ function createWindow() {
 	const windowWidth = store.get('windowWidth');
 	const windowHeight = store.get('windowHeight');
 
+	
 	// Define o caminho para o ícone
 	const iconPath = path.join(app.getAppPath(), 'public', 'assets', 'icon.png');
-
+	
 	mainWindow = new BrowserWindow({
 		// Usa as dimensões padrão ou salvas
 		width: windowWidth,
@@ -51,10 +53,10 @@ function createWindow() {
 		minHeight: 400,
 		title: "Anki Importer",
 		icon: iconPath,
-
+		
 		frame: false,
 		autoHideMenuBar: true,
-
+		
 		webPreferences: {
 			// Garantir que a comunicação do Front-end seja segura
 			preload: path.join(__dirname, 'preload.js'),
@@ -63,7 +65,8 @@ function createWindow() {
 			devTools: process.env.NODE_ENV === 'development',
 		},
 	});
-
+	
+	const indexPath = path.join(__dirname, 'dist', 'index.html');
 	// Carrega a URL do seu Front-end Vite (Verifique a porta!)
 	const devServerURL = 'http://localhost:5173';
 
@@ -72,8 +75,13 @@ function createWindow() {
 		mainWindow.loadURL(devServerURL);
 		mainWindow.webContents.openDevTools();
 	} else {
-		// Modo de Produção (após o build do Vite)
-		mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
+		// MODO DE PRODUÇÃO: USANDO url.format PARA GARANTIR O CAMINHO CORRETO
+		// Isso resolve o problema de caminho ao carregar de dentro do pacote .asar
+		mainWindow.loadURL(url.format({
+			pathname: path.join(__dirname, 'dist', 'index.html'),
+			protocol: 'file:', // Define o protocolo como 'file://'
+			slashes: true // Garante as barras corretas na URL
+		}));
 	}
 
 	// --- Lógica de Execução em Segundo Plano ---
@@ -139,6 +147,8 @@ function registerGlobalShortcut() {
 
 	const success = globalShortcut.register(shortcut, () => {
 
+		if (!mainWindow) return;
+		
 		mainWindow.webContents.send('navigate-to-importer');
 
 		// 1. Pega o texto da área de transferência

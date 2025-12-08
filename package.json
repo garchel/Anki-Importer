@@ -1,6 +1,6 @@
 {
   "name": "anki-importer",
-	"productName": "Anki Importer",
+  "productName": "Anki Importer",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -8,8 +8,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:renderer": "vite build",
-    "pack": "npm run build:renderer && npm run build:electron && electron-builder --dir",
-    "dist": "npm run build:renderer && npm run build:electron && electron-builder",
+    "pack": "npm run build:renderer && electron-builder --dir",
+    "dist": "npm run build:renderer && electron-builder",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -23,16 +23,18 @@
     "files": [
       "dist/**",
       "main.js",
+			"preload.js",
       "package.json",
-      "src/assets/icon.png"
+      "public/assets/icon.png",
+			"public/assets/foto3.jpg"
     ],
     "win": {
       "target": "nsis",
-      "icon": "src/assets/icon.png"
+      "icon": "public/assets/icon.png"
     },
     "mac": {
       "target": "dmg",
-      "icon": "src/assets/icon.png"
+      "icon": "public/assets/icon.png"
     }
   },
   "dependencies": {

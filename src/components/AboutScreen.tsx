@@ -10,11 +10,11 @@ const AboutScreen: React.FC = () => {
 	const devInfo = {
 		name: "Paulo Victor",
 		bio: "Desenvolvedor Full-Stack apaixonado por automatizar processos. Criei esta ferramenta para otimizar meu próprio uso do Anki e espero que seja útil para você também!",
-		photoUrl: "/assets/foto3.jpg",
+		photoUrl: "./assets/foto3.jpg",
 		github: "https://github.com/garchel",
 		linkedin: "https://www.linkedin.com/in/paulovictorco/",
 		portfolio: "https://paulovictor.vercel.app/",
-		pixKey: "b02de26d-e173-41d0-a38f-3da4e2829574", 
+		pixKey: "b02de26d-e173-41d0-a38f-3da4e2829574",
 	};
 
 	const [copied, setCopied] = useState(false);

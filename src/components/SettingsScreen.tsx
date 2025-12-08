@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Adicionado useCallback
 import { useSettings } from './context/SettingsContext';
 import type {
 	FieldDelimiter,
@@ -42,11 +42,16 @@ const SettingsScreen: React.FC = () => {
 	// --- HOOK DO CONTEXTO REAL ---
 	const { settings, updateSettings, ankiData } = useSettings();
 	const { deckNames, modelNames, isLoading, error: ankiError, isConnected, loadAnkiData } = ankiData;
+
 	const currentShortcutParts = settings.globalShortcut.split('+');
 	const initialModifier = currentShortcutParts.length > 1 ? currentShortcutParts[0] : 'Control';
 	const initialKey = currentShortcutParts.length > 1 ? currentShortcutParts[1] : 'G';
+
 	const [shortcutModifier, setShortcutModifier] = useState(initialModifier);
 	const [shortcutKey, setShortcutKey] = useState(initialKey);
+
+	// 💡 NOVO ESTADO: Controla se o campo está no modo de escuta de tecla
+	const [isListening, setIsListening] = useState(false);
 
 	// Sincroniza estados locais com o estado global ao carregar
 	useEffect(() => {
@@ -56,19 +61,19 @@ const SettingsScreen: React.FC = () => {
 	}, [settings.globalShortcut]);
 
 	// Função de salvamento (disparada pelo botão de salvar)
-	const handleSaveShortcut = () => {
+	const handleSaveShortcut = useCallback(() => {
 		const newShortcut = `${shortcutModifier}+${shortcutKey.toUpperCase()}`;
 		updateSettings({ globalShortcut: newShortcut });
-	};
+	}, [shortcutModifier, shortcutKey, updateSettings]);
 
 	// Função de redefinição
-	const handleResetShortcut = () => {
+	const handleResetShortcut = useCallback(() => {
 		// O padrão é Control+G, que o Electron irá converter para Command+G no macOS.
 		const defaultShortcut = 'Control+G';
 		setShortcutModifier('Control');
 		setShortcutKey('G');
 		updateSettings({ globalShortcut: defaultShortcut });
-	};
+	}, [updateSettings]);
 
 
 	// Handler para alternar Modelos Permitidos
@@ -111,9 +116,54 @@ const SettingsScreen: React.FC = () => {
 		updateSettings({ defaultDeck: value });
 	};
 
+	// --- LÓGICA DO INPUT DE ATALHO ---
+
+	// 💡 NOVO: Handler chamado quando o campo de input ganha foco
+	const handleFocus = () => {
+		// Indica que o componente está pronto para escutar a próxima tecla
+		setIsListening(true);
+		// Limpa o campo visualmente enquanto espera a nova tecla
+		setShortcutKey('...');
+	};
+
+	// 💡 NOVO: Handler chamado quando o campo perde o foco
+	const handleBlur = () => {
+		// Sai do modo de escuta
+		setIsListening(false);
+		// Restaura o valor da tecla se o usuário não tiver digitado nada (e o valor for "...")
+		if (shortcutKey === '...') {
+			const parts = settings.globalShortcut.split('+');
+			setShortcutKey(parts.length > 1 ? parts[1] : 'G');
+		}
+	};
+
+	// 💡 NOVO: Handler que captura a primeira tecla digitada
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		e.preventDefault(); // Impede o comportamento padrão (ex: não digita '...' no campo)
+		e.stopPropagation(); // Impede que o evento se propague
+
+		if (!isListening) return;
+
+		// Obtém a tecla pressionada. 'e.key' é o valor da tecla (ex: 'a', 'F1', 'Escape', 'Shift')
+		let key = e.key;
+
+		// Ignora modificadores puros (Ctrl, Alt, Shift, Meta)
+		if (['Control', 'Alt', 'Shift', 'Meta'].includes(key)) {
+			return;
+		}
+
+		// Tratamento especial para o ' ' (espaço)
+		if (key === ' ') {
+			key = 'Space';
+		}
+
+		// Converte a tecla para o formato esperado pelo Electron (maiúsculas)
+		setShortcutKey(key.toUpperCase());
+		setIsListening(false); // Para de escutar após a primeira tecla
+
+	};
 
 	// --- LÓGICA DO "PERSONALIZADO" ---
-	// O select agora só deve mostrar presets. A opção "Personalizado" é removida da lógica do Select.
 	const currentResString = `${settings.windowWidth}x${settings.windowHeight}`;
 	const isPreset = WINDOW_RESOLUTIONS.some(
 		res => `${res.width}x${res.height}` === currentResString
@@ -128,10 +178,6 @@ const SettingsScreen: React.FC = () => {
 				Configurações
 			</h1>
 			<hr className="mb-6 border-border" />
-
-			{/* <p className="mt-4 text-muted-foreground mb-3">
-				Ajuste as preferências do aplicativo e os valores padrão de importação.
-			</p>*/}
 
 			{/* Exibição de Erros do Anki */}
 			{ankiError && (
@@ -165,7 +211,6 @@ const SettingsScreen: React.FC = () => {
 										{label} ({width}x{height})
 									</SelectItem>
 								))}
-								{/* REMOVIDO: Opção "Personalizado" */}
 							</SelectContent>
 						</Select>
 					</div>
@@ -326,15 +371,18 @@ const SettingsScreen: React.FC = () => {
 							</Select>
 						</div>
 
-						{/* INPUT TECLA */}
+						{/* INPUT TECLA - LÓGICA DE CAPTURA DE TECLA ADICIONADA */}
 						<div className="w-20">
 							<Label htmlFor="shortcutKey" className="text-sm font-medium leading-none mb-1 block">Tecla</Label>
 							<Input
 								id="shortcutKey"
-								value={shortcutKey}
-								onChange={(e) => setShortcutKey(e.target.value.toUpperCase().slice(0, 1))}
-								maxLength={1}
-								className="w-full text-center bg-input"
+								// Exibe 'Pressione...' quando estiver escutando a tecla
+								value={isListening ? '...' : shortcutKey}
+								readOnly={isListening} // Torna o campo somente leitura ao escutar
+								onFocus={handleFocus} // Entra em modo de escuta ao focar
+								onBlur={handleBlur} // Sai do modo de escuta ao perder o foco
+								onKeyDown={handleKeyDown} // Captura a tecla
+								className={`w-full text-center bg-input ${isListening ? 'cursor-text animate-pulse border-orange-500 border-2' : ''}`} // Feedback visual
 							/>
 						</div>
 
@@ -342,7 +390,7 @@ const SettingsScreen: React.FC = () => {
 						<Button
 							onClick={handleSaveShortcut}
 							// Desabilita se o atalho atual for igual ao digitado
-							disabled={settings.globalShortcut === `${shortcutModifier}+${shortcutKey.toUpperCase()}`}
+							disabled={settings.globalShortcut === `${shortcutModifier}+${shortcutKey.toUpperCase()}` || isListening || shortcutKey === '...'}
 						>
 							Salvar Atalho
 						</Button>
@@ -351,7 +399,7 @@ const SettingsScreen: React.FC = () => {
 						<Button
 							variant="outline"
 							onClick={handleResetShortcut}
-							disabled={settings.globalShortcut === 'Control+G'}
+							disabled={settings.globalShortcut === 'Control+G' || isListening}
 						>
 							Redefinir
 						</Button>
