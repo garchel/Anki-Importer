@@ -120,7 +120,7 @@ function createTray() {
  * Registra o atalho global e define a ação.
  */
 function registerGlobalShortcut() {
-	const shortcut = 'Alt+G'; // Usa Command para macOS e Control para Windows/Linux
+	const shortcut = process.platform === 'darwin' ? 'Command+G' : 'Control+G';
 
 	const success = globalShortcut.register(shortcut, () => {
 		// 1. Pega o texto da área de transferência
@@ -130,6 +130,15 @@ function registerGlobalShortcut() {
 			// 2. Garante que a janela está visível
 			if (!mainWindow.isVisible()) {
 				mainWindow.show();
+			}
+
+			// Traz a janela para o foco (primeiro plano)
+			mainWindow.focus();
+
+			// **Para macOS:** é uma boa prática chamar app.show() ou app.focus() para reativar o aplicativo
+			// Se a aplicação estiver oculta no macOS (Cmd+H) ou minimizada
+			if (process.platform === 'darwin') {
+				app.show(); // Traz o aplicativo de volta para o primeiro plano (útil para macOS)
 			}
 
 			// 3. Envia o texto para o processo de renderização (React)

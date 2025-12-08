@@ -10,16 +10,10 @@ const controls = [
 ];
 
 export const WindowControls: React.FC = () => {
-	// É crucial que esta div tenha a propriedade -webkit-app-region: drag;
-	// para que o usuário possa arrastar a janela por esta área.
-	// E os botões devem ter -webkit-app-region: no-drag; para serem clicáveis.
-
-	// O botão 'close' usará o comando 'quit-app' (closeWindow) para fechar totalmente, conforme solicitado.
-
 	return (
 		<div
 			className="flex items-center justify-end h-8 pr-1"
-			style={{ WebkitAppRegion: 'drag' }} // Permite arrastar a janela por esta div
+			style={{ WebkitAppRegion: 'drag' }} // Permite arrastar a janela por esta div 
 		>
 			{controls.map((control) => {
 				const Icon = control.icon;

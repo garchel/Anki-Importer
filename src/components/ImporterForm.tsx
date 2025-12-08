@@ -24,7 +24,6 @@ export const ImporterForm: React.FC = () => {
 	// --- HOOK DO CONTEXTO ---
 	const { settings, ankiData } = useSettings();
 	const { deckNames, modelNames, isLoading, error: ankiError, isConnected, loadAnkiData } = ankiData;
-	// ------------------------
 
 	// Estado para armazenar os campos do modelo (ainda dependente do modelo selecionado)
 	const [fieldNames, setFieldNames] = useState<string[]>([]);
@@ -186,14 +185,15 @@ export const ImporterForm: React.FC = () => {
 	const isFormValid = selectedDeck && selectedModel && csvText.trim();
 
 	return (
-		<div className="max-w-6xl mx-auto p-6 text-card-foreground shadow-xl rounded-lg">
+		<div className="max-w-6xl mx-auto p-6 text-card-foreground shadow-xl">
 
-			<div className='flex justify-between border-b border-border pb-2 mb-6' >
-				<h2 className="text-3xl font-extrabold  ">
+			<div className='flex justify-between mb-5' >
+				<h2 className="text-3xl font-bold  ">
 					{currentView === 'form'
 						? 'Importar Flashcards'
 						: 'Prévia e Confirmação'}
 				</h2>
+				
 
 				{/* Indicador de status de conexão com Anki */}
 				<AnkiStatusIndicator
@@ -202,6 +202,7 @@ export const ImporterForm: React.FC = () => {
 					isConnected={isConnected}
 				/>
 			</div>
+			<hr className="mb-6 border-border" />
 
 			{/* Exibição de Erros */}
 			{formError && (
@@ -240,8 +241,7 @@ export const ImporterForm: React.FC = () => {
 										<button type="button" className="ml-2 text-xs text-muted-foreground hover:text-foreground">(?)</button>
 									</TooltipTrigger>
 									<TooltipContent side="right" className="max-w-xs">
-										Escolha o baralho onde os flashcards serão importados.
-										Exemplo: "Inglês", "Medicina", "Geografia".
+										Escolha um dos seus baralhos onde os flashcards serão importados.
 									</TooltipContent>
 								</Tooltip>
 							</TooltipProvider>
@@ -291,11 +291,11 @@ export const ImporterForm: React.FC = () => {
 							<p className="text-muted-foreground">
 								{fieldNames.length > 0 ? fieldNames.join(', ') : 'Carregando campos...'}
 							</p>
-							<p className="mt-2 text-primary text-xs">
-								Lembrete: Seu texto deve mapear para os campos, seguido pelas Tags. O delimitador de campo usado é
-								<strong>"{settings.fieldDelimiter}"</strong>.
+							<p className="mt-2 text-muted-foreground text-xs">
+								Delimitador esperado: 
+								<span className='text-primary/50 font-bold'>"{settings.fieldDelimiter}"</span>.
 								<br />
-								<strong>Formato Esperado:</strong> Frente{settings.fieldDelimiter}Verso{settings.fieldDelimiter}Tag1,Tag2
+								Formato Esperado: <span className='font-bold text-primary/50'>Frente{settings.fieldDelimiter}Verso{settings.fieldDelimiter}Tag1,Tag2</span>
 							</p>
 						</div>
 					)}
@@ -325,7 +325,7 @@ export const ImporterForm: React.FC = () => {
 							onChange={(e: any) => setCsvText(e.target.value)}
 							placeholder="Cole seu texto aqui."
 							disabled={!isConnected || isSubmitting}
-							className="bg-input border-border text-foreground focus:ring-ring"
+							className="bg-input border-border text-foreground focus:ring-ring max-h-[200px]"
 						/>
 					</div>
 

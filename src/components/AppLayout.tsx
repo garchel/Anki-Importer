@@ -1,28 +1,13 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { ImporterForm } from './ImporterForm';
-import SettingsScreen from './SettingsScreen'
 import { useNavigation } from '@/hooks/useNavigation';
 import { SuggestedPrompts } from './SuggestedPrompts';
-import type { AppScreen } from '@/hooks/useNavigation'
 import { WindowControls } from './WindowControls';
-
-// Componentes de Conteúdo (Simulações de Telas Futuras)
-
-const HowToScreen: React.FC = () => (
-	<div className="p-6">
-		<h1 className="text-3xl font-bold text-foreground">❓ Como Usar</h1>
-		<p className="mt-4 text-muted-foreground">Instruções detalhadas sobre o formato CSV e atalhos.</p>
-	</div>
-);
-
-const AboutScreen: React.FC = () => (
-	<div className="p-6">
-		<h1 className="text-3xl font-bold text-foreground">👨‍💻 Conheça o Dev</h1>
-		<p className="mt-4 text-muted-foreground">Informações sobre o criador e links de contato.</p>
-	</div>
-);
-
+import SettingsScreen from './SettingsScreen'
+import HowToScreen from './HowToScreen';
+import AboutScreen from './AboutScreen';
+import type { AppScreen } from '@/hooks/useNavigation'
 
 const renderScreen = (screen: AppScreen) => {
 	switch (screen) {
@@ -56,7 +41,7 @@ export const AppLayout: React.FC = () => {
 					<WindowControls />
 				</div>
 				<div className='absolute left-1/2 transform -translate-x-1/2 text-sm text-muted-foreground pt-1' style={{ WebkitAppRegion: 'no-drag' }}>
-					Anki Importer
+					Anki Importer - <span className='italic text-orange-500'>by @Garchel</span>
 				</div>
 			</div>
 

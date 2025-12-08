@@ -89,14 +89,15 @@ const SettingsScreen: React.FC = () => {
 	const selectValue = isPreset ? currentResString : `${WINDOW_RESOLUTIONS[0].width}x${WINDOW_RESOLUTIONS[0].height}`;
 
 	return (
-		<div className="p-6 max-w-2xl scrollbar-hide">
-			<h1 className="text-3xl font-bold text-foreground mb-6 flex items-center">
-				⚙️ Configurações
+		<div className="p-6 max-w-6xl scrollbar-hide mx-auto">
+			<h1 className="text-3xl font-bold text-foreground mb-5 flex items-center">
+				Configurações
 			</h1>
+			<hr className="mb-6 border-border" />
 
-			<p className="mt-4 text-muted-foreground mb-8">
+			{/* <p className="mt-4 text-muted-foreground mb-3">
 				Ajuste as preferências do aplicativo e os valores padrão de importação.
-			</p>
+			</p>*/}
 
 			{/* Exibição de Erros do Anki */}
 			{ankiError && (
