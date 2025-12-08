@@ -1,0 +1,77 @@
+# .github/workflows/build-and-release.yml
+
+name: Build & Release
+
+# Dispara o workflow quando uma nova tag (versão) for enviada.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Ex: v1.0.0
+
+jobs:
+  build-windows:
+    # Nome da tarefa
+    name: Build Installer (Windows)
+    # Define o ambiente da máquina virtual como Windows
+    runs-on: windows-latest
+    
+    steps:
+      # 1. Checkout: Baixa o código do repositório
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Setup Node: Configura o ambiente Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # Versão recomendada (LTS)
+
+      # 3. Instalar Dependências
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. Build: Cria o instalador (.exe)
+      - name: Build Electron Installer
+        run: npm run dist
+        # O resultado será o 'Anki Importer Setup x.x.x.exe' na pasta 'release'
+
+      # 5. Publicar o Artefato: Salva o instalador para a próxima etapa
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: release/*.exe
+          retention-days: 1 # Mantém o arquivo por 1 dia na nuvem
+
+  release:
+    # Nome da tarefa
+    name: Create GitHub Release
+    # Roda somente se a tarefa de build (acima) for bem-sucedida
+    needs: [build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Download: Baixa o instalador (.exe) criado na etapa de build
+      - name: Download Installer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: installers/
+
+      # 2. Upload para o GitHub Releases
+      - name: Upload to GitHub Release
+        # Esta é a ação que faz o upload via API, contornando o limite de 25MB
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installers/*.exe
+          # Usa a tag que disparou o workflow (ex: v1.0.0)
+          tag_name: ${{ github.ref_name }}
+          # Nome do Release
+          name: Release ${{ github.ref_name }}
+          # Conteúdo (pode ser personalizado)
+          body: |
+            ## 🎉 Novidades nesta versão
+            * Build automatizado via GitHub Actions.
+            * Inclui instalador para Windows.
+          # Usa o token padrão do GitHub
+          token: ${{ secrets.GITHUB_TOKEN }}
