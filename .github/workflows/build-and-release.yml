@@ -33,6 +33,11 @@ jobs:
       # 4. Build: Cria o instalador (.exe)
       - name: Build Electron Installer
         run: npm run dist
+        # >>> CORREÇÃO: Passar o GITHUB_TOKEN como variável de ambiente (GH_TOKEN)
+        # O electron-builder precisa deste token para rodar sem erro em ambiente de tag/release.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        # <<<
         # O resultado será o 'Anki Importer Setup x.x.x.exe' na pasta 'release'
 
       # 5. Publicar o Artefato: Salva o instalador para a próxima etapa
