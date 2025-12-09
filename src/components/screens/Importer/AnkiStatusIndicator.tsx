@@ -1,4 +1,5 @@
-// src/components/AnkiStatusIndicator.tsx
+// src/components/screens/Importer/AnkiStatusIndicator.tsx
+
 import {
 	Tooltip,
 	TooltipTrigger,

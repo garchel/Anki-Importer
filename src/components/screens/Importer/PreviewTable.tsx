@@ -1,4 +1,4 @@
-// src/components/PreviewTable.tsx
+// src/components/screens/Importer/PreviewTable.tsx
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
-import type { PreviewCard } from '../api/types';
+import type { PreviewCard } from '@/api/types';
 import { Eye, ChevronLeft } from 'lucide-react';
 
 interface PreviewTableProps {

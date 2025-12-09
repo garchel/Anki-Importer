@@ -7,7 +7,7 @@ app.setName("Anki Importer");
 
 // Define o esquema de persistência, incluindo todas as settings do frontend
 const store = new Store({
-	name: 'user-settings', // Nome do arquivo JSON
+	name: 'user-settings', 
 	defaults: {
 		windowWidth: 1024,
 		windowHeight: 768,
@@ -20,33 +20,21 @@ const store = new Store({
 	}
 });
 
-/**
- * Retorna o atalho global configurado.
- */
 function getGlobalShortcutFromStore() {
 	const defaultShortcut = process.platform === 'darwin' ? 'Command+G' : 'Control+G';
-	// Retorna o atalho salvo ou o padrão se não estiver definido
 	return store.get('globalShortcut', defaultShortcut);
 }
 
-// Variáveis para armazenar a janela principal e a bandeja (tray)
 let mainWindow = null;
 let tray = null;
 let appQuitting = false;
 
-/**
- * Cria a janela principal do aplicativo.
- */
 function createWindow() {
 	const windowWidth = store.get('windowWidth');
 	const windowHeight = store.get('windowHeight');
-
-	
-	// Define o caminho para o ícone
 	const iconPath = path.join(app.getAppPath(), 'public', 'assets', 'icon.png');
 	
 	mainWindow = new BrowserWindow({
-		// Usa as dimensões padrão ou salvas
 		width: windowWidth,
 		height: windowHeight,
 		minWidth: 600,
@@ -67,16 +55,13 @@ function createWindow() {
 	});
 	
 	const indexPath = path.join(__dirname, 'dist', 'index.html');
-	// Carrega a URL do seu Front-end Vite (Verifique a porta!)
+	// Carrega a URL do seu Front-end Vite
 	const devServerURL = 'http://localhost:5173';
 
 	if (process.env.NODE_ENV === 'development') {
-		// Modo de Desenvolvimento
 		mainWindow.loadURL(devServerURL);
 		mainWindow.webContents.openDevTools();
 	} else {
-		// MODO DE PRODUÇÃO: USANDO url.format PARA GARANTIR O CAMINHO CORRETO
-		// Isso resolve o problema de caminho ao carregar de dentro do pacote .asar
 		mainWindow.loadURL(url.format({
 			pathname: path.join(__dirname, 'dist', 'index.html'),
 			protocol: 'file:', // Define o protocolo como 'file://'
@@ -103,9 +88,7 @@ function createWindow() {
  * Configura o ícone na bandeja do sistema (System Tray).
  */
 function createTray() {
-	// Caminho para o ícone. Use um arquivo pequeno (ex: icon.png)
 	const iconPath = path.join(app.getAppPath(), 'public', 'assets', 'icon.png');
-	// Cria o objeto de imagem, redimensionando para o tamanho padrão da bandeja (16x16)
 	const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
 
 	tray = new Tray(icon);
@@ -120,7 +103,6 @@ function createTray() {
 		{
 			label: 'Sair',
 			click: () => {
-				// Define a flag e encerra o aplicativo
 				appQuitting = true;
 				app.quit();
 			}
@@ -163,15 +145,11 @@ function registerGlobalShortcut() {
 			// Traz a janela para o foco (primeiro plano)
 			mainWindow.focus();
 
-			// **Para macOS:** é uma boa prática chamar app.show() ou app.focus() para reativar o aplicativo
-			// Se a aplicação estiver oculta no macOS (Cmd+H) ou minimizada
 			if (process.platform === 'darwin') {
 				app.show(); // Traz o aplicativo de volta para o primeiro plano (útil para macOS)
 			}
 
-
-
-			// 3. Envia o texto para o processo de renderização (React)
+			// 3. Envia o texto para o processo de renderização
 			if (selectedText) {
 				mainWindow.webContents.send('global-shortcut-text', selectedText);
 			} else {
@@ -202,7 +180,7 @@ function registerIpcHandlers() {
 			// 1. Aplica o redimensionamento na janela principal
 			mainWindow.setSize(size.width, size.height, true);
 
-			// 2. Centraliza a janela após o redimensionamento (melhora UX)
+			// 2. Centraliza a janela após o redimensionamento
 			mainWindow.center();
 
 			// 3. Salva as novas dimensões na store permanentemente
@@ -259,7 +237,7 @@ function registerIpcHandlers() {
 				store.set(key, newSettings[key]);
 			}
 
-			// NOVO: Se o atalho global foi alterado, re-registra
+			// Se o atalho global foi alterado, re-registra
 			if (Object.prototype.hasOwnProperty.call(newSettings, 'globalShortcut')) {
 				registerGlobalShortcut();
 			}
@@ -293,7 +271,6 @@ app.on('window-all-closed', () => {
 	// Mantemos o aplicativo ativo no Windows/Linux mesmo que a janela principal feche,
 	// para que o Tray continue visível.
 	if (process.platform !== 'darwin') {
-		// Não fazemos nada aqui para manter a lógica do Tray.
 	}
 });
 

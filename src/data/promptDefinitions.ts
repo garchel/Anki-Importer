@@ -32,6 +32,7 @@ REGRAS DE FORMATAÇÃO (CRÍTICO):
 2. O formato de saída deve ser compatível com importação CSV.
 3. O delimitador de colunas DEVE ser o {{DELIMITADOR}}.
 4. **IMPORTANTE:** Se a coluna "Tags" for incluída, as tags individuais dentro dessa coluna devem ser separadas por **espaço** ou **vírgula** (ex: Tag1,Tag2 ou Tag1 Tag2).
+5. Não utilize ";" a não ser que seja o {{DELIMITADOR}}.
 
 FORMATO:
 {{FORMATO_FINAL}}
@@ -41,6 +42,7 @@ INSTRUÇÃO DE GERAÇÃO:
 * Que consiste em: {{EXPLICACAO_MODELO}}
 * {{INSTRUCAO_ESPECIFICA_CLOZE}}
 * Se houver necessidade de usar o delimitador dentro das perguntas ou respostas, utilize o caractere de escape: "\\{{DELIMITADOR}}" antes dele.
+* Gere os flashcards em Português Brasileiro
 
 CONTEÚDO:
 Se não for instruído quantos flashcards devem ser gerados, garanta que há flashcards suficientes para abordar o ponto central do conteúdo (mínimo 5).
