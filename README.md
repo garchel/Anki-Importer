@@ -18,8 +18,8 @@ Você pode baixar e instalar a versão mais recente do Anki Importer diretamente
 
 <div align="center">
   <h3>Baixe a Versão Mais Recente</h3>
-  <a href="https://github.com/garchel/Anki-Importer/releases/latest/download/Anki.Importer.Setup.0.0.0.exe">
-    <img alt="Download - Versão Mais Recente" src="https://img.shields.io/badge/Download_Agora-v0.0.2%2B-orange?style=for-the-badge&logo=github&logoColor=white&labelColor=101010" />
+  <a href="https://github.com/garchel/Anki-Importer/releases/download/v0.0.3/Anki-Importer-Setup-0.0.3.exe">
+    <img alt="Download - Versão Mais Recente" src="https://img.shields.io/badge/Download_Agora-v0.0.3%2B-orange?style=for-the-badge&logo=github&logoColor=white&labelColor=101010" />
   </a>
 </div>
 
