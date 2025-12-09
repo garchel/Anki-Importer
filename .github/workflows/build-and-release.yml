@@ -30,17 +30,22 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 4. Build: Cria o instalador (.exe)
+      # 4. Sincronizar Versão da Tag para o package.json
+      # Isso garante que o nome do instalador (lido pelo electron-builder) reflita a tag.
+      - name: Set Package Version from Tag
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          npm version $version --no-git-tag-version
+        shell: powershell
+      
+      # 5. Build: Cria o instalador (.exe)
       - name: Build Electron Installer
         run: npm run dist
-        # >>> CORREÇÃO: Passar o GITHUB_TOKEN como variável de ambiente (GH_TOKEN)
-        # O electron-builder precisa deste token para rodar sem erro em ambiente de tag/release.
+        # O electron-builder precisa do token para rodar sem erro em ambiente de tag/release.
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-        # <<<
-        # O resultado será o 'Anki Importer Setup x.x.x.exe' na pasta 'release'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Publicar o Artefato: Salva o instalador para a próxima etapa
+      # 6. Publicar o Artefato: Salva o instalador para a próxima etapa (release)
       - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -51,7 +56,7 @@ jobs:
   release:
     # Nome da tarefa
     name: Create GitHub Release
-    # Roda somente se a tarefa de build (acima) for bem-sucedida
+    # Roda somente se a tarefa de build for bem-sucedida
     needs: [build-windows]
     runs-on: ubuntu-latest
 
