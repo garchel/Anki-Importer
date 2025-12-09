@@ -14,18 +14,19 @@ Chega de copiar, abrir o Anki, criar um novo card, colar, e repetir.
 
 ## ⬇️ Download e Instalação
 
-Você pode baixar e instalar a versão mais recente do Anki Importer diretamente pelo link abaixo.
+Você pode baixar e instalar a versão mais recente do Anki Importer diretamente. O arquivo de instalação é compatível com **Windows, macOS e Linux** e será baixado automaticamente na versão mais recente.
 
-| Sistema Operacional | Arquivo de Instalação |
-| :--- | :--- |
-| **Windows (.exe)** | [Link para o Anki Importer Setup v0.0.0.exe](LINK_PARA_O_SEU_ARQUIVO_NO_GITHUB_RELEASES) |
-| **macOS (.dmg)** | [Link para o Anki Importer Setup v0.0.0.dmg](LINK_PARA_O_SEU_ARQUIVO_NO_GITHUB_RELEASES) |
-| **Linux (.deb/.AppImage)** | [Link para o pacote Linux](LINK_PARA_O_SEU_ARQUIVO_NO_GITHUB_RELEASES) |
+<div align="center">
+  <h3>Baixe a Versão Mais Recente</h3>
+  <a href="https://github.com/garchel/Anki-Importer/releases/latest/download/Anki.Importer.Setup.0.0.0.exe">
+    <img alt="Download - Versão Mais Recente" src="https://img.shields.io/badge/Download_Agora-v0.0.2%2B-orange?style=for-the-badge&logo=github&logoColor=white&labelColor=101010" />
+  </a>
+</div>
 
 **Instruções de Instalação:**
-1. Baixe o arquivo de instalação (ex: `.exe` para Windows).
-2. Execute o instalador e siga as instruções na tela.
-3. O aplicativo será iniciado e ficará rodando em segundo plano (na bandeja do sistema).
+1.  **Baixe o arquivo** de instalação (`.exe` para Windows, `.dmg` para macOS, etc.) usando o link acima.
+2.  **Execute o instalador** e siga as instruções na tela.
+3.  O aplicativo será iniciado e ficará rodando em segundo plano (na bandeja do sistema).
 
 ---
 
@@ -34,9 +35,9 @@ Você pode baixar e instalar a versão mais recente do Anki Importer diretamente
 O aplicativo utiliza um atalho global configurável para agilizar o fluxo de trabalho:
 
 ### 1. Fluxo de Captura
-1. **Selecione o Texto:** Em qualquer aplicativo (navegador, PDF, documento), selecione o texto que você deseja transformar em flashcard.
-2. **Copie o Texto:** Use o atalho de cópia padrão do sistema (**`Ctrl + C`** ou **`Cmd + C`**).
-3. **Ative o Importer:** Pressione o atalho global configurado (**Padrão: `Ctrl + G`** ou **`Cmd + G`**).
+1.  **Selecione o Texto:** Em qualquer aplicativo (navegador, PDF, documento), selecione o texto que você deseja transformar em flashcard.
+2.  **Copie o Texto:** Use o atalho de cópia padrão do sistema (**`Ctrl + C`** ou **`Cmd + C`**).
+3.  **Ative o Importer:** Pressione o atalho global configurado (**Padrão: `Ctrl + G`** ou **`Cmd + G`**).
 
 ### 2. Ação do Aplicativo
 Ao pressionar o atalho, o Anki Importer faz o seguinte:

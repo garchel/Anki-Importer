@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
 	addNotes,
 	getModelFieldNames,
-} from '../api/AnkiService'; // Removidos getDeckNames, getModelNames, getVersion
-import { parseNotesFromCSVText } from '../lib/parser';
-import type { PreviewCard, Note } from '../api/types';
+} from '../../../api/AnkiService'; // Removidos getDeckNames, getModelNames, getVersion
+import { parseNotesFromCSVText } from '../../../lib/parser';
+import type { PreviewCard, Note } from '../../../api/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { PreviewTable } from '@/components/PreviewTable';
-import { CardModal } from '@/components/CardModal';
+import { PreviewTable } from '@/components/screens/Importer/PreviewTable';
+import { CardModal } from '@/components/screens/Importer/CardModal';
 import { AnkiStatusIndicator } from './AnkiStatusIndicator'
 import {
 	Tooltip,
@@ -17,8 +17,8 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SelectPadronizado } from './ui/SelectPadronizado';
-import { useSettings } from './context/SettingsContext';
+import { SelectPadronizado } from '../../ui/SelectPadronizado';
+import { useSettings } from '../../context/SettingsContext';
 
 export const ImporterForm: React.FC = () => {
 	// --- HOOK DO CONTEXTO ---
@@ -193,7 +193,7 @@ export const ImporterForm: React.FC = () => {
 						? 'Importar Flashcards'
 						: 'Prévia e Confirmação'}
 				</h2>
-				
+
 
 				{/* Indicador de status de conexão com Anki */}
 				<AnkiStatusIndicator
@@ -292,7 +292,7 @@ export const ImporterForm: React.FC = () => {
 								{fieldNames.length > 0 ? fieldNames.join(', ') : 'Carregando campos...'}
 							</p>
 							<p className="mt-2 text-muted-foreground text-xs">
-								Delimitador esperado: 
+								Delimitador esperado:
 								<span className='text-primary/50 font-bold'>"{settings.fieldDelimiter}"</span>.
 								<br />
 								Formato Esperado: <span className='font-bold text-primary/50'>Frente{settings.fieldDelimiter}Verso{settings.fieldDelimiter}Tag1,Tag2</span>

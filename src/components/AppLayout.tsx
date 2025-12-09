@@ -1,13 +1,13 @@
 import React from 'react';
 import { useEffect } from 'react';
 import { Sidebar } from './Sidebar';
-import { ImporterForm } from './ImporterForm';
+import { ImporterForm } from './screens/Importer/ImporterScreen';
 import { useNavigation } from '@/hooks/useNavigation';
-import { SuggestedPrompts } from './SuggestedPrompts';
+import { SuggestedPrompts } from './screens/Prompts/PromptsScreen';
 import { WindowControls } from './WindowControls';
-import SettingsScreen from './SettingsScreen'
-import HowToScreen from './HowToScreen';
-import AboutScreen from './AboutScreen';
+import SettingsScreen from './screens/Settings/SettingsScreen'
+import HowToScreen from './screens/HowTo/HowToScreen';
+import AboutScreen from './screens/About/AboutScreen';
 import type { AppScreen } from '@/hooks/useNavigation'
 
 const renderScreen = (screen: AppScreen) => {
